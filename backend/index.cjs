@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const { pool, connectDb } = require('./config/dbConnection.cjs');
+const Contact = require('./models/contact.cjs'); // Mongoose model
 
 const app = express();
 const port = 5002;
@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 
 // Connect to the database
 // Uncomment the next line when you're ready to connect to the database
-// connectDb();
+connectDb();
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
@@ -33,13 +33,23 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
+// Route to handle contact form submission
 app.post('/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
+
   try {
-    const query = 'INSERT INTO contacts(name, email, subject, message) VALUES($1, $2, $3, $4) RETURNING *';
-    const values = [name, email, subject, message];
-    const result = await pool.query(query, values);
-    res.json({ message: 'Message received successfully!', data: result.rows[0] });
+    // Create a new contact instance with the form data
+    const newContact = new Contact({
+      name,
+      email,
+      subject,
+      message
+    });
+     console.log(newContact);
+    // Save the contact data to MongoDB
+    const savedContact = await newContact.save();
+
+    res.json({ message: 'Message received successfully!', data: savedContact });
   } catch (err) {
     console.error('Error saving contact data:', err);
     res.status(500).json({ message: 'An error occurred while processing your request.' });
