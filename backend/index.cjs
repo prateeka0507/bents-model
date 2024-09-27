@@ -17,6 +17,16 @@ const corsOptions = {
 
 // Apply CORS globally
 app.use(cors(corsOptions));
+const options = [
+  cors({
+    origin: '*',
+    methods: '*',
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+];
+
+app.use(options);
 
 // Middleware
 app.use(bodyParser.json());
