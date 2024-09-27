@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const  connectDb  = require('./config/dbConnection.cjs');
 const Contact = require('./contact.cjs'); // Mongoose model
 
 const app = express();
