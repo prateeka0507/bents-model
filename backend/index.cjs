@@ -2,9 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const  connectDb  = require('./config/dbConnection.cjs');
-const Contact = require('./contact.cjs'); // Mongoose model
-const User = require('./userModel.cjs');
+//const  connectDb  = require('./config/dbConnection.cjs');
+//const Contact = require('./contact.cjs'); // Mongoose model
+//const User = require('./userModel.cjs');
 const app = express();
 const port = 5002;
 
