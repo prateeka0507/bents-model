@@ -25,7 +25,7 @@ app.use(bodyParser.json());
 
 // Connect to the database
 // Uncomment the next line when you're ready to connect to the database
-connectDb();
+//connectDb();
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
