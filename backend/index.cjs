@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const  connectDb  = require('./config/dbConnection.cjs');
 const Contact = require('./contact.cjs'); // Mongoose model
-
+const User = require('./userModel.cjs');
 const app = express();
 const port = 5002;
 
@@ -29,6 +29,40 @@ connectDb();
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
+
+// Get user data
+app.get('/api/user/:userId', async (req, res) => {
+  try {
+    const user = await User.findOne({ userId: req.params.userId });
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Save user data
+app.post('/api/user/:userId', async (req, res) => {
+  try {
+    const { conversations, searchHistory, selectedIndex } = req.body;
+    const user = await User.findOneAndUpdate(
+      { userId: req.params.userId },
+      { conversations, searchHistory, selectedIndex },
+      { new: true, upsert: true }
+    );
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+
+
 
 app.get("/", (req, res) => {
   res.send("Server is running");
