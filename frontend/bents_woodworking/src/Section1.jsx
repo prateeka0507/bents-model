@@ -50,7 +50,7 @@ function FeatureCard({ icon, title, description }) {
 }
 
 export default function Section1() {
-  const [formData, setFormData] = useState({
+   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
@@ -64,11 +64,12 @@ export default function Section1() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/contact', formData);
+      // Send form data to the backend API
+      const response = await axios.post(' http://localhost:5002/contact', formData);
       alert(response.data.message);
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
-      alert('An error occurred while submitting the form.');
+      console.log(error);
     }
   };
   return (
