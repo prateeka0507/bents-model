@@ -1,23 +1,20 @@
-const { Pool } = require('pg');
+const mongoose = require("mongoose");
 require('dotenv').config(); // Load environment variables from .env
 
-const pool = new Pool({
-  host: process.env.PG_HOST,
-  port: process.env.PG_PORT,
-  database: process.env.PG_DATABASE,
-  user: process.env.PG_USER,
-  password: process.env.PG_PASSWORD,
-});
+// Correct the connection string
+const CONNECTION_STRING = "mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0";
 
 const connectDb = async () => {
   try {
-    const client = await pool.connect();
-    console.log(`Connected to PostgreSQL: ${client.database} on ${client.host}`);
-    client.release(); // Release the client back to the pool
+    const connect = await mongoose.connect(CONNECTION_STRING); // No need for deprecated options
+
+    console.log(
+      `Database connected: ${connect.connection.host} (DB: ${connect.connection.name})`
+    );
   } catch (err) {
-    console.error('Error connecting to PostgreSQL:', err.message);
+    console.error("Error connecting to database:", err.message);
     process.exit(1); // Exit the process with failure
   }
 };
 
-module.exports = { pool, connectDb };
+module.exports = connectDb;
