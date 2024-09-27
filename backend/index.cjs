@@ -3,45 +3,27 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const { pool, connectDb } = require('./config/dbConnection.cjs');
+
 const app = express();
 const port = 5002;
-const allowCors = fn => async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true)
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  // another common pattern
-  // res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  )
-  if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
-  }
-  return await fn(req, res)
-}
 
-const handler = (req, res) => {
-  const d = new Date()
-  res.end(d.toString())
-}
-
-
-
-
+// CORS configuration
 const corsOptions = {
-  origin: ['https://bents-model-frontend.vercel.app/'],
+  origin: ['https://bents-model-frontend.vercel.app', 'https://bents-model-backend.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };
 
+// Apply CORS globally
+app.use(cors(corsOptions));
+
 // Middleware
 app.use(bodyParser.json());
 
 // Connect to the database
-//connectDb();
+// Uncomment the next line when you're ready to connect to the database
+// connectDb();
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
@@ -50,8 +32,7 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-// Apply CORS to specific routes
-app.post('/contact', cors(corsOptions), async (req, res) => {
+app.post('/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
   try {
     const query = 'INSERT INTO contacts(name, email, subject, message) VALUES($1, $2, $3, $4) RETURNING *';
@@ -64,7 +45,7 @@ app.post('/contact', cors(corsOptions), async (req, res) => {
   }
 });
 
-app.post('/chat', cors(corsOptions), async (req, res) => {
+app.post('/chat', async (req, res) => {
   try {
     const response = await axios.post(`${FLASK_BACKEND_URL}/chat`, req.body);
     res.json(response.data);
@@ -74,7 +55,7 @@ app.post('/chat', cors(corsOptions), async (req, res) => {
   }
 });
 
-app.get('/documents', cors(corsOptions), async (req, res) => {
+app.get('/documents', async (req, res) => {
   try {
     const response = await axios.get(`${FLASK_BACKEND_URL}/documents`);
     res.json(response.data);
@@ -84,7 +65,7 @@ app.get('/documents', cors(corsOptions), async (req, res) => {
   }
 });
 
-app.post('/add_document', cors(corsOptions), async (req, res) => {
+app.post('/add_document', async (req, res) => {
   try {
     const response = await axios.post(`${FLASK_BACKEND_URL}/add_document`, req.body);
     res.json(response.data);
@@ -94,7 +75,7 @@ app.post('/add_document', cors(corsOptions), async (req, res) => {
   }
 });
 
-app.post('/delete_document', cors(corsOptions), async (req, res) => {
+app.post('/delete_document', async (req, res) => {
   try {
     const response = await axios.post(`${FLASK_BACKEND_URL}/delete_document`, req.body);
     res.json(response.data);
@@ -104,7 +85,7 @@ app.post('/delete_document', cors(corsOptions), async (req, res) => {
   }
 });
 
-app.post('/update_document', cors(corsOptions), async (req, res) => {
+app.post('/update_document', async (req, res) => {
   try {
     const response = await axios.post(`${FLASK_BACKEND_URL}/update_document`, req.body);
     res.json(response.data);
