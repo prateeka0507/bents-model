@@ -7,7 +7,7 @@ const app = express();
 const port = 5002;
 
 const corsOptions = {
-  origin: ['https://bents-model.vercel.app'],
+  origin: ['https://bents-model-frontend.vercel.app/'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 //connectDb();
 
 // Flask backend URL
-const FLASK_BACKEND_URL = 'https://bents-model-ijmx.vercel.app/';
+const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
 
 app.get("/", (req, res) => {
   res.send("Server is running");
