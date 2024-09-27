@@ -7,16 +7,7 @@ const { pool, connectDb } = require('./config/dbConnection.cjs');
 const app = express();
 const port = 5002;
 
-// CORS configuration
-const corsOptions = {
-  origin: ['https://bents-model-frontend.vercel.app', 'https://bents-model-backend.vercel.app'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-};
 
-// Apply CORS globally
-app.use(cors(corsOptions));
 const options = [
   cors({
     origin: '*',
