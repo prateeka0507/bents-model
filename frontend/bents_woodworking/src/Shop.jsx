@@ -3,40 +3,80 @@ import axios from 'axios'
 import { Button } from './components/ui/button.jsx'
 import { Card, CardContent, CardFooter } from './components/ui/card.jsx'
 import { Loader2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+
 function ProductCard({ product }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
   return (
-    <Card className="w-full flex flex-col h-full">
-      <CardContent className="p-4 flex-grow flex flex-col">
-        <div className="flex flex-col items-center mb-4">
-          <img
-            src={product.image || '/path/to/placeholder-image.jpg'}
-            alt={product.title}
-            className="w-full h-48 object-cover rounded-md mb-4"
-          />
-          <h3 className="font-semibold text-lg text-center mb-2">{product.title}</h3>
+    <Card className="w-full flex flex-col">
+      <CardContent className="p-3 flex-grow flex flex-col">
+        <div className="flex items-start mb-2">
+        <img
+  src={product.image || '/path/to/placeholder-image.jpg'}
+  alt={product.title}
+  className="w-12 h-12 object-cover rounded-md mr-2 flex-shrink-0"
+  width={48}
+  height={48}
+/>
+
+          <div className="flex-grow min-h-[4rem] flex flex-col">
+            <h3 className="font-semibold text-sm">{product.title}</h3>
+            <p className="text-xs text-gray-600 flex-grow">{product.description}</p>
+          </div>
+        </div>
+        <div className="mt-auto">
+          <a
+            href={product.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center text-blue-500 hover:text-blue-600 text-sm font-medium"
+          >
+            View Product <ExternalLink size={12} className="ml-1" />
+          </a>
         </div>
       </CardContent>
-      <CardFooter className="mt-auto flex justify-center p-4">
-        <a
-          href={product.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center text-blue-500 hover:text-blue-600 text-sm font-medium"
-        >
-          View Product <ExternalLink size={12} className="ml-1" />
-        </a>
+      <CardFooter className="p-2">
+        <div className="w-full">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full flex justify-between items-center text-xs"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            Videos
+            {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </Button>
+          {isExpanded && (
+            <div className="mt-2 space-y-1">
+              {product.videoLinks && product.videoLinks.map((link, index) => (
+                <a
+                  key={index}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-xs text-blue-600 hover:underline"
+                >
+                  Review {index + 1}
+                  <ExternalLink size={10} className="ml-1" />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       </CardFooter>
     </Card>
   )
 }
+
 export default function Shop() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://localhost:5002/documents')
+        const response = await axios.get('https://bents-model-backend.vercel.app/documents')
         // Assuming the backend returns an array of arrays with [id, title, tags, link]
         const formattedProducts = response.data.map(product => ({
           id: product[0],
@@ -44,7 +84,8 @@ export default function Shop() {
           tags: product[2],
           link: product[3],
           image: product[4], // This should be the image data URL from the backend, // Placeholder image with reduced size
-          // Placeholder video links
+          description: `Product tags: ${product[2]}`, // Using tags as description
+          videoLinks: ['https://example.com/video1', 'https://example.com/video2'] // Placeholder video links
         }))
         setProducts(formattedProducts)
         setLoading(false)
@@ -53,8 +94,10 @@ export default function Shop() {
         setLoading(false)
       }
     }
+
     fetchProducts()
   }, [])
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -62,6 +105,7 @@ export default function Shop() {
       </div>
     )
   }
+
   if (error) {
     return (
       <div className="text-center mt-8 text-red-500" role="alert">
@@ -72,20 +116,22 @@ export default function Shop() {
       </div>
     )
   }
+
   return (
     <div className="container mx-auto px-2 py-4 max-w-7xl">
-    <header className="mb-6">
-      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
-        Recommended Products
-      </h1>
-    </header>
-    <main>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-    </main>
-  </div>
-)
+      <header className="mb-6">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center">
+          Recommended Products
+        </h1>
+      </header>
+
+      <main>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </main>
+    </div>
+  )
 }
