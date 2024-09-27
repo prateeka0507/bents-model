@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const Contact = require('./contact.cjs'); // Mongoose model
+//const Contact = require('./contact.cjs'); // Mongoose model
 
 const app = express();
 const port = 5002;
@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 
 // Connect to the database
 // Uncomment the next line when you're ready to connect to the database
-connectDb();
+//connectDb();
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
