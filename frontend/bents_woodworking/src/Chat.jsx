@@ -26,15 +26,73 @@ export default function Chat() {
   const [showInitialQuestions, setShowInitialQuestions] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState("bents"); // Default index
+  const [selectedIndex, setSelectedIndex] = useState("bents");
+  const [isInitialized, setIsInitialized] = useState(false);
   const sidebarRef = useRef(null);
   const hamburgerRef = useRef(null);
+
+  // Assume we have a userId for the current user
+  const userId = "user123"; // This should be dynamically set based on your authentication system
+
+  useEffect(() => {
+    // Check if this is a new page load or a refresh
+    const isNewPageLoad = !sessionStorage.getItem('isPageLoaded');
+    
+    if (isNewPageLoad) {
+      // This is a new page load (refresh), clear local storage
+      localStorage.removeItem('chatData');
+      sessionStorage.setItem('isPageLoaded', 'true');
+    } else {
+      // This is navigation between pages, try to load data from local storage
+      const storedData = localStorage.getItem('chatData');
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        setConversations(parsedData.conversations || []);
+        setSearchHistory(parsedData.searchHistory || []);
+        setSelectedIndex(parsedData.selectedIndex || "bents");
+        setShowInitialQuestions(parsedData.conversations.length === 0);
+        setIsInitialized(true);
+        return; // Exit early as we've loaded the data
+      }
+    }
+
+    // If no stored data or it's a refresh, fetch from the server
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5002/api/user/${userId}`);
+        const userData = response.data;
+        if (userData) {
+          setConversations(userData.conversations || []);
+          setSearchHistory(userData.searchHistory || []);
+          setSelectedIndex(userData.selectedIndex || "bents");
+          setShowInitialQuestions(userData.conversations.length === 0);
+        }
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setIsInitialized(true);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
+  useEffect(() => {
+    // Save data to local storage whenever it changes
+    if (isInitialized) {
+      localStorage.setItem('chatData', JSON.stringify({
+        conversations,
+        searchHistory,
+        selectedIndex
+      }));
+    }
+  }, [conversations, searchHistory, selectedIndex, isInitialized]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+      const response = await axios.post('http://localhost:5002/chat', {
         message: searchQuery,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
@@ -47,8 +105,8 @@ export default function Chat() {
         products: response.data.related_products,
         videoLinks: response.data.video_links
       };
-      setConversations([...conversations, newConversation]);
-      setSearchHistory([...searchHistory, searchQuery]);
+      setConversations(prevConversations => [...prevConversations, newConversation]);
+      setSearchHistory(prevHistory => [...prevHistory, searchQuery]);
       setShowInitialQuestions(false);
       setSearchQuery("");
     } catch (error) {
