@@ -59,7 +59,7 @@ export default function Chat() {
     // If no stored data or it's a refresh, fetch from the server
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`http://localhost:5002/api/user/${userId}`);
+        const response = await axios.get(`https://bents-model-backend.vercel.app/user/${userId}`);
         const userData = response.data;
         if (userData) {
           setConversations(userData.conversations || []);
@@ -92,7 +92,7 @@ export default function Chat() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5002/chat', {
+      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: searchQuery,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
