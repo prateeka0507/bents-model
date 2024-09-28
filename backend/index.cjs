@@ -15,6 +15,7 @@ const options = [
     methods: '*',
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+    optionsSuccessStatus: 204
   })
 ];
 
