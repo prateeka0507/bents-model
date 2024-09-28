@@ -98,7 +98,9 @@ export default function Chat() {
 
   const handleSearch = async (e, initialQuestionIndex = null) => {
     e.preventDefault(); // Prevent the default form submission
-    if (!searchQuery && initialQuestionIndex === null) return; // Don't search if query is empty
+    
+    const query = initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery;
+    if (!query.trim()) return; // Don't search if query is empty
     
     setIsLoading(true);
     if (initialQuestionIndex !== null) {
@@ -107,20 +109,20 @@ export default function Chat() {
     
     try {
       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
-        message: initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery,
+        message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
       });
       
       const newConversation = {
-        question: initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery,
+        question: query,
         text: response.data.response,
         video: response.data.url,
         products: response.data.related_products,
         videoLinks: response.data.video_links
       };
       setConversations(prevConversations => [...prevConversations, newConversation]);
-      setSearchHistory(prevHistory => [...prevHistory, newConversation.question]);
+      setSearchHistory(prevHistory => [...prevHistory, query]);
       setShowInitialQuestions(false);
       setSearchQuery("");
       
@@ -343,12 +345,14 @@ export default function Chat() {
                 </div>
                 <div className="clear-both"></div>
               </div>
-            ))}
+
+
+))}
           </div>
         )}
       </div>
 
-{/* Search Bar for non-empty conversations */}
+      {/* Search Bar for non-empty conversations */}
       {conversations.length > 0 && (
         <div className="p-4 bg-gray-100">
           <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
