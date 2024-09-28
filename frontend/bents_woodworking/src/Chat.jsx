@@ -26,6 +26,7 @@ export default function Chat() {
   const [showInitialQuestions, setShowInitialQuestions] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingQuestionIndex, setLoadingQuestionIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
   const sidebarRef = useRef(null);
@@ -88,31 +89,35 @@ export default function Chat() {
     }
   }, [conversations, searchHistory, selectedIndex, isInitialized]);
 
-  const handleSearch = async (e) => {
+  const handleSearch = async (e, initialQuestionIndex = null) => {
     e.preventDefault();
     setIsLoading(true);
+    if (initialQuestionIndex !== null) {
+      setLoadingQuestionIndex(initialQuestionIndex);
+    }
     try {
       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
-        message: searchQuery,
+        message: initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
       });
       
       const newConversation = {
-        question: searchQuery,
+        question: initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery,
         text: response.data.response,
         video: response.data.url,
         products: response.data.related_products,
         videoLinks: response.data.video_links
       };
       setConversations(prevConversations => [...prevConversations, newConversation]);
-      setSearchHistory(prevHistory => [...prevHistory, searchQuery]);
+      setSearchHistory(prevHistory => [...prevHistory, newConversation.question]);
       setShowInitialQuestions(false);
       setSearchQuery("");
     } catch (error) {
       console.error("Error fetching response:", error);
     } finally {
       setIsLoading(false);
+      setLoadingQuestionIndex(null);
     }
   };
 
@@ -250,7 +255,7 @@ export default function Chat() {
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
             {/* Initial Search bar with increased height and grey background */}
-            <form onSubmit={handleSearch} className="w-full max-w-2xl mb-8">
+            <form onSubmit={(e) => handleSearch(e)} className="w-full max-w-2xl mb-8">
               <div className="relative">
                 <input
                   type="text"
@@ -279,13 +284,15 @@ export default function Chat() {
                 {initialQuestions.map((question, index) => (
                   <button
                     key={index}
-                    onClick={() => {
-                      setSearchQuery(question);
-                      handleSearch({ preventDefault: () => {} });
-                    }}
-                    className="p-4 border rounded-lg hover:bg-gray-100 text-center h-full flex items-center justify-center transition-colors duration-200 ease-in-out"
+                    onClick={(e) => handleSearch(e, index)}
+                    className="p-4 border rounded-lg hover:bg-gray-100 text-center h-full flex items-center justify-center transition-colors duration-200 ease-in-out relative"
+                    disabled={isLoading || loadingQuestionIndex !== null}
                   >
-                    <span>{question}</span>
+                    {loadingQuestionIndex === index ? (
+                      <span className="animate-spin absolute">⌛</span>
+                    ) : (
+                      <span>{question}</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -329,7 +336,7 @@ export default function Chat() {
       {/* Search Bar for non-empty conversations */}
       {conversations.length > 0 && (
         <div className="p-4 bg-gray-100">
-          <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
+          <form onSubmit={(e) => handleSearch(e)} className="flex items-center w-full max-w-2xl mx-auto">
             <input
               type="text"
               value={searchQuery}
