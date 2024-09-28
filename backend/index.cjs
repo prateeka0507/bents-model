@@ -71,25 +71,27 @@ app.get("/", (req, res) => {
 // Route to handle contact form submission
 app.post('/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
-
   try {
-    // Create a new contact instance with the form data
+    console.log('Received contact form submission:', { name, email, subject, message });
+
     const newContact = new Contact({
       name,
       email,
       subject,
-      message
+      message,
     });
-     console.log(newContact);
-    // Save the contact data to MongoDB
+
     const savedContact = await newContact.save();
+    console.log('Contact saved successfully:', savedContact);
 
     res.json({ message: 'Message received successfully!', data: savedContact });
   } catch (err) {
     console.error('Error saving contact data:', err);
-    res.status(500).json({ message: 'An error occurred while processing your request.' });
+    console.error('Error details:', err.message, err.stack);
+    res.status(500).json({ message: 'An error occurred while processing your request.', error: err.message });
   }
 });
+
 
 app.post('/chat', async (req, res) => {
   try {
