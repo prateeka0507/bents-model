@@ -90,11 +90,14 @@ export default function Chat() {
   }, [conversations, searchHistory, selectedIndex, isInitialized]);
 
   const handleSearch = async (e, initialQuestionIndex = null) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent the default form submission
+    if (!searchQuery && initialQuestionIndex === null) return; // Don't search if query is empty
+    
     setIsLoading(true);
     if (initialQuestionIndex !== null) {
       setLoadingQuestionIndex(initialQuestionIndex);
     }
+    
     try {
       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery,
@@ -176,17 +179,18 @@ export default function Chat() {
     return null;
   };
 
- const formatResponse = (text, videoLinks) => {
-  // Replace timestamps with hyperlinks
-  let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
-    const link = videoLinks[`[video${p1}]`];
-    return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
-  });
-  // Format points and numbered bold text
-  formattedText = formattedText.replace(/^- (.*?)$/gm, '<li>• $1</li>');
-  formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
-  return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-};
+  const formatResponse = (text, videoLinks) => {
+    // Replace timestamps with hyperlinks
+    let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
+      const link = videoLinks[`[video${p1}]`];
+      return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
+    });
+    // Format points and numbered bold text
+    formattedText = formattedText.replace(/^- (.*?)$/gm, '<li>• $1</li>');
+    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
+    return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
+  };
+
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Header */}
@@ -252,7 +256,7 @@ export default function Chat() {
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
             {/* Initial Search bar with increased height and grey background */}
-            <form onSubmit={(e) => handleSearch(e)} className="w-full max-w-2xl mb-8">
+            <form onSubmit={handleSearch} className="w-full max-w-2xl mb-8">
               <div className="relative">
                 <input
                   type="text"
@@ -264,7 +268,7 @@ export default function Chat() {
                 <button
                   type="submit"
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  disabled={isLoading}
+                  disabled={isLoading || !searchQuery.trim()}
                 >
                   {isLoading ? (
                     <span className="animate-spin">⌛</span>
@@ -330,10 +334,10 @@ export default function Chat() {
         )}
       </div>
 
-      {/* Search Bar for non-empty conversations */}
+{/* Search Bar for non-empty conversations */}
       {conversations.length > 0 && (
         <div className="p-4 bg-gray-100">
-          <form onSubmit={(e) => handleSearch(e)} className="flex items-center w-full max-w-2xl mx-auto">
+          <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
             <input
               type="text"
               value={searchQuery}
@@ -344,7 +348,7 @@ export default function Chat() {
             <button
               type="submit"
               className="bg-blue-500 text-white p-2 rounded-r-lg hover:bg-blue-600"
-              disabled={isLoading}
+              disabled={isLoading || !searchQuery.trim()}
             >
               {isLoading ? (
                 <span className="animate-spin">⌛</span>
