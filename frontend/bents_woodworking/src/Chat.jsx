@@ -186,7 +186,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <header className="bg-white p-4 flex justify-between items-center border-b">
         <div 
@@ -244,7 +244,7 @@ export default function Chat() {
       )}
 
       {/* Main content */}
-      <div className="flex-grow overflow-y-auto">
+      <div className="flex-grow">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-4">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
