@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowRight, PlusCircle, Menu, ChevronRight, Search } from 'lucide-react';
+import { ArrowRight, PlusCircle, Menu, ChevronRight, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import YouTube from 'react-youtube';
 
@@ -59,7 +59,7 @@ export default function Chat() {
     // If no stored data or it's a refresh, fetch from the server
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`https://bents-model-backend.vercel.app/user/${userId}`);
+        const response = await axios.get(`https://bents-model-backend.vercel.app/api/user/${userId}`);
         const userData = response.data;
         if (userData) {
           setConversations(userData.conversations || []);
@@ -122,20 +122,16 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    const handleMouseMove = (event) => {
-      if (hamburgerRef.current) {
-        const rect = hamburgerRef.current.getBoundingClientRect();
-        const isNearHamburger = 
-          event.clientX <= rect.right + 50 && 
-          event.clientY >= rect.top - 50 && 
-          event.clientY <= rect.bottom + 50;
-        setShowSidebar(isNearHamburger);
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target) &&
+          hamburgerRef.current && !hamburgerRef.current.contains(event.target)) {
+        setShowSidebar(false);
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -208,8 +204,14 @@ export default function Chat() {
       {showSidebar && (
         <div 
           ref={sidebarRef}
-          className="fixed top-16 left-0 w-64 bg-white p-4 shadow-lg z-10 h-full"
+          className="fixed top-0 left-0 w-64 bg-white p-4 shadow-lg z-20 h-full mt-7"
         >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Menu</h2>
+            <button onClick={() => setShowSidebar(false)} className="text-gray-500 hover:text-gray-700">
+              <X size={24} />
+            </button>
+          </div>
           <button
             onClick={handleNewConversation}
             className="flex items-center justify-center bg-blue-500 text-white py-2 px-4 rounded-lg mb-4 hover:bg-blue-600 w-full"
@@ -271,9 +273,9 @@ export default function Chat() {
               </div>
             </form>
 
-            {/* Initial questions in a single line */}
+            {/* Initial questions in equal boxes */}
             {showInitialQuestions && (
-              <div className="w-full max-w-2xl flex justify-between space-x-4 overflow-x-auto">
+              <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {initialQuestions.map((question, index) => (
                   <button
                     key={index}
@@ -281,9 +283,9 @@ export default function Chat() {
                       setSearchQuery(question);
                       handleSearch({ preventDefault: () => {} });
                     }}
-                    className="px-4 py-2 border rounded-lg hover:bg-gray-100 text-center whitespace-nowrap"
+                    className="p-4 border rounded-lg hover:bg-gray-100 text-center h-full flex items-center justify-center transition-colors duration-200 ease-in-out"
                   >
-                    {question}
+                    <span>{question}</span>
                   </button>
                 ))}
               </div>
