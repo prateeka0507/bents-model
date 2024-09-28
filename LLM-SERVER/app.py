@@ -1,11 +1,11 @@
 import os
+import uuid
+import re
+import logging
 from flask import Flask, render_template, request, jsonify, session
 from werkzeug.utils import secure_filename
 from docx import Document
-import uuid
-import re
 from dotenv import load_dotenv
-load_dotenv()
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
 from langchain.chains import ConversationalRetrievalChain
@@ -14,8 +14,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from pinecone import Pinecone, ServerlessSpec
 import langsmith
-
 from flask_cors import CORS
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": [
@@ -23,19 +24,15 @@ CORS(app, resources={r"/*": {"origins": [
     "https://bents-model-frontend.vercel.app"
 ]}})
 
-
-
-
-app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Set a secret key for sessions
 
 # Access your API keys (set these in environment variables)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
 TRANSCRIPT_INDEX_NAMES = ["bents", "shop-improvement", "tool-recommendations"]
 PRODUCT_INDEX_NAME = "bents-woodworking-products"
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_PROJECT"] = "jason-json"
 
@@ -74,11 +71,14 @@ SYSTEM_INSTRUCTIONS = """You are an AI assistant specialized in information retr
         8. Always prioritize accuracy over speed. If you're not certain about an answer, say so.
         9. For multi-part queries, address each part separately and clearly.
         10. Aim to provide responses within seconds, even for large documents.
-        11. Provide the timestamp for where the information was found in the original video. Use the format {{timestamp:MM:SS}} for timestamps under an hour, and {{timestamp:HH:MM:SS}} for longer videos.
+        11. please only Provide the timestamp for where the information was found in the original video. must Use the format {{timestamp:MM:SS}} for timestamps under an hour, and {{timestamp:HH:MM:SS}} for longer videos.
         12. Do not include any URLs in your response. Just provide the timestamps in the specified format.
         13. When referencing timestamps that may be inaccurate, you can use language like "around", "approximately", or "in the vicinity of" to indicate that the exact moment may vary slightly.
         Remember, always respond in English, even if the query or context is in another language.
         """
+
+logging.basicConfig(level=logging.DEBUG)
+
 def add_product(title, tags, link):
     product_id = str(uuid.uuid4())
     tags_text = ', '.join(tags) if isinstance(tags, list) else tags
@@ -92,15 +92,12 @@ def add_product(title, tags, link):
     product_vector_store.add_texts([tags_text], metadatas=[metadata], ids=[product_id])
     return product_id
 
-import base64
 def get_all_products():
     print("Starting get_all_products()")
     try:
-        # Use the Pinecone index directly to fetch all vectors
         index = pc.Index(PRODUCT_INDEX_NAME)
         vector_dim = index.describe_index_stats()['dimension']
         zero_vector = [0.0] * vector_dim
-        # Fetch all vectors (adjust limit if necessary)
         results = index.query(vector=zero_vector, top_k=10000, include_metadata=True)
         print(f"Retrieved {len(results['matches'])} results from Pinecone")
         products = []
@@ -112,21 +109,20 @@ def get_all_products():
             image_data = metadata.get('image_data', '')
             image_url = ''
             if image_data:
-                # Assuming the image is stored as base64 encoded JPEG
                 image_url = f"data:image/jpeg;base64,{image_data}"
             product = [
-                str(match['id']),  # Use Pinecone ID as the first element
+                str(match['id']),
                 str(metadata.get('title', 'No Title')),
                 str(metadata.get('tags', 'No Tags')),
                 str(metadata.get('link', 'No Link')),
-                image_url  # Add image URL as the fifth element
+                image_url
             ]
             products.append(product)
         print(f"Final products list: {products}")
         return products
     except Exception as e:
         print(f"Error in get_all_products: {str(e)}")
-        raise  # Re-raise the exception to be caught by the route handler
+        raise
 
 def process_answer(answer, url):
     def replace_timestamp(match):
@@ -158,7 +154,7 @@ def combine_url_and_timestamp(base_url, timestamp):
     if '?' in base_url:
         return f"{base_url}&t={total_seconds}"
     else:
-        return f"{base_url}?t={total_seconds}"    
+        return f"{base_url}?t={total_seconds}"
 
 def delete_product(product_id):
     product_vector_store.delete([product_id])
@@ -194,24 +190,27 @@ def upsert_transcript(transcript_text, metadata, index_name):
 def serve_spa():
     return render_template('index.html')
 
-import logging
-from flask import jsonify, request
-
-logging.basicConfig(level=logging.DEBUG)
-
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         data = request.json
         logging.debug(f"Received data: {data}")
 
-        user_query = data['message']
+        user_query = data['message'].strip()
         selected_index = data['selected_index']
         chat_history = data.get('chat_history', [])
 
         logging.debug(f"Chat history received: {chat_history}")
 
-        # Format chat history for ConversationalRetrievalChain
+        if not user_query or user_query in ['.', ',', '?', '!']:
+            return jsonify({
+                'response': "I'm sorry, but I didn't receive a valid question. Could you please ask a complete question?",
+                'related_products': [],
+                'url': None,
+                'context': [],
+                'video_links': {}
+            })
+
         formatted_history = []
         for i in range(0, len(chat_history) - 1, 2):
             human = chat_history[i]
@@ -221,6 +220,46 @@ def chat():
         logging.debug(f"Formatted chat history: {formatted_history}")
 
         retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 3})
+        
+        relevance_check_prompt = f"""
+        Given the following question or message and the chat history, determine if it is:
+        1. A greeting or general conversation starter
+        2. Related to woodworking, tools, home improvement, or the assistant's capabilities
+        3. Related to the company, its products, services, or business operations
+        4. A continuation or follow-up question to the previous conversation
+        5. Related to violence, harmful activities, or other inappropriate content
+        6. Completely unrelated to the above topics and not a continuation of the conversation
+
+        If it falls under categories 1, 2, 3, or 4, respond with 'RELEVANT'.
+        If it falls under category 5, respond with 'INAPPROPRIATE'.
+        If it falls under category 6, respond with 'NOT RELEVANT'.
+
+        Chat History:
+        {formatted_history[-3:] if formatted_history else "No previous context"}
+
+        Current Question: {user_query}
+        
+        Response (RELEVANT, INAPPROPRIATE, or NOT RELEVANT):
+        """
+        
+        relevance_response = llm.predict(relevance_check_prompt)
+        
+        if "INAPPROPRIATE" in relevance_response.upper():
+            return jsonify({
+                'response': "I'm sorry, but I don't engage with content related to violence or harmful activities. Is there something else I can help you with regarding woodworking, tools, or home improvement?",
+                'related_products': [],
+                'url': None,
+                'context': [],
+                'video_links': {}
+            })
+        elif "NOT RELEVANT" in relevance_response.upper():
+            return jsonify({
+                'response': "I'm sorry, but I'm specialized in topics related to our company, woodworking, tools, and home improvement. I can also engage in general conversation or continue our previous discussion. Could you please ask a question related to these topics, continue our previous conversation, or start with a greeting?",
+                'related_products': [],
+                'url': None,
+                'context': [],
+                'video_links': {}
+            })
         
         prompt = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(SYSTEM_INSTRUCTIONS),
@@ -238,26 +277,41 @@ def chat():
         
         initial_answer = result['answer']
         context = [doc.page_content for doc in result['source_documents']]
-        url = result['source_documents'][0].metadata.get('url', '') if result['source_documents'] else None
+        source_documents = result['source_documents']
+        
+        # Extract video title from metadata of the first source document
+        video_title = "Unknown Video"
+        url = None
+        if source_documents:
+            metadata = source_documents[0].metadata
+            video_title = metadata.get('title', "Unknown Video")
+            url = metadata.get('url', None)
+        
+        logging.debug(f"Extracted video title from chunk metadata: {video_title}")
         
         # Process the answer to replace timestamps and extract video links
         processed_answer, video_dict = process_answer(initial_answer, url)
         
         logging.debug(f"Processed answer: {processed_answer}")
         
-        # Get embedding for the processed answer
-        answer_embedding = embeddings.embed_query(processed_answer)
+        # Generate embedding for the video title
+        try:
+            title_embedding = embeddings.embed_query(video_title)
+            logging.debug(f"Generated title embedding. Shape: {len(title_embedding)}")
+        except Exception as e:
+            logging.error(f"Error generating title embedding: {str(e)}")
+            return jsonify({'error': 'An error occurred while processing the video title'}), 500
         
-        logging.debug(f"Generated answer embedding. Shape: {len(answer_embedding)}")
+        MAX_RELATED_PRODUCTS = 10
         
-        # Use answer embedding for product search
+        # Use title embedding for product search
         product_index = pc.Index(PRODUCT_INDEX_NAME)
         logging.debug(f"Querying product index: {PRODUCT_INDEX_NAME}")
         
         try:
             product_results = product_index.query(
-                vector=answer_embedding,
-                top_k=5,  # Retrieve more products to ensure we get all
+                vector=title_embedding,
+                top_k=MAX_RELATED_PRODUCTS,
                 include_metadata=True
             )
             logging.debug(f"Product search results: {product_results}")
@@ -265,29 +319,25 @@ def chat():
             logging.error(f"Error querying product index: {str(e)}")
             product_results = {'matches': []}
         
-        matching_products = []
-        non_matching_products = []
+        related_products = []
         
         for match in product_results['matches']:
-            logging.debug(f"Processing match: {match}")
-            product = {
-                'title': match['metadata'].get('title', 'Untitled'),
-                'tags': match['metadata'].get('tags', ''),
-                'link': match['metadata'].get('link', '')
-            }
-            
-            tags = match['metadata'].get('tags', '').split(',')
-            logging.debug(f"Tags for product: {tags}")
-            
-            if any(tag.strip().lower() in processed_answer.lower() for tag in tags):
-                matching_products.append(product)
-                logging.debug(f"Added matching product: {product}")
-            else:
-                non_matching_products.append(product)
-                logging.debug(f"Added non-matching product: {product}")
+            try:
+                product = {
+                    'id': match['id'],
+                    'title': match['metadata'].get('title', 'Untitled'),
+                    'tags': match['metadata'].get('tags', ''),
+                    'link': match['metadata'].get('link', ''),
+                    'score': match['score']
+                }
+                related_products.append(product)
+                logging.debug(f"Retrieved product: {product}")
+            except Exception as e:
+                logging.error(f"Error processing product match: {str(e)}")
+                logging.debug(f"Problematic match data: {match}")
         
-        # Combine matching and non-matching products, with matching ones first
-        related_products = matching_products + non_matching_products
+        # Sort products by similarity score
+        related_products.sort(key=lambda x: x['score'], reverse=True)
         
         logging.debug(f"Final related products: {related_products}")
         
@@ -296,15 +346,16 @@ def chat():
             'related_products': related_products,
             'url': url,
             'context': context,
-            'video_links': video_dict
+            'video_links': video_dict,
+            'video_title': video_title  # Include the video title in the response
         }
         
         return jsonify(response_data)
+
     except Exception as e:
         logging.error(f"Error in chat route: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred processing your request'}), 500
-    
-    
+
 @app.route('/upload_document', methods=['POST'])
 def upload_document():
     if 'file' not in request.files:
@@ -359,7 +410,6 @@ def update_document():
     data = request.json
     update_product(data['id'], data['title'], data['tags'].split(','), data['link'])
     return jsonify({'success': True})
-
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
