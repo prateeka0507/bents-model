@@ -31,6 +31,7 @@ export default function Chat() {
   const [isInitialized, setIsInitialized] = useState(false);
   const sidebarRef = useRef(null);
   const hamburgerRef = useRef(null);
+  const latestConversationRef = useRef(null);
 
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
@@ -89,6 +90,12 @@ export default function Chat() {
     }
   }, [conversations, searchHistory, selectedIndex, isInitialized]);
 
+  const scrollToLatestConversation = () => {
+    if (latestConversationRef.current) {
+      latestConversationRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const handleSearch = async (e, initialQuestionIndex = null) => {
     e.preventDefault(); // Prevent the default form submission
     if (!searchQuery && initialQuestionIndex === null) return; // Don't search if query is empty
@@ -116,6 +123,9 @@ export default function Chat() {
       setSearchHistory(prevHistory => [...prevHistory, newConversation.question]);
       setShowInitialQuestions(false);
       setSearchQuery("");
+      
+      // Scroll to the new conversation after it's added
+      setTimeout(scrollToLatestConversation, 100);
     } catch (error) {
       console.error("Error fetching response:", error);
     } finally {
@@ -302,7 +312,11 @@ export default function Chat() {
         ) : (
           <div className="p-4">
             {conversations.map((conv, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg shadow mb-4">
+              <div 
+                key={index} 
+                className="bg-white p-4 rounded-lg shadow mb-4"
+                ref={index === conversations.length - 1 ? latestConversationRef : null}
+              >
                 <h2 className="font-bold mb-4">{conv.question}</h2>
                 
                 {/* Related Products */}
