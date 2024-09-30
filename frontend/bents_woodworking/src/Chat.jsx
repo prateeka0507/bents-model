@@ -139,11 +139,21 @@ export default function Chat() {
     } catch (error) {
       if (axios.isCancel(error)) {
         console.log('Request canceled:', error.message);
+        alert("The request took too long to respond. Please try again.");
+      } else if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Server responded with error:", error.response.status, error.response.data);
+        alert(`Server error: ${error.response.status}. Please try again later.`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error("No response received:", error.request);
+        alert("No response from server. Please check your internet connection and try again.");
       } else {
-        console.error("Error fetching response:", error);
+        // Something happened in setting up the request that triggered an Error
+        console.error("Error setting up request:", error.message);
+        alert("An unexpected error occurred. Please try again.");
       }
-      // Add user-facing error handling here
-      alert("An error occurred while fetching the response. Please try again.");
     } finally {
       setIsLoading(false);
       setLoadingQuestionIndex(null);
