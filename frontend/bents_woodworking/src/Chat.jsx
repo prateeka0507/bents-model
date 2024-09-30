@@ -110,13 +110,18 @@ export default function Chat() {
     }
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+
       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
       }, {
-        timeout: 30000 // 30 seconds timeout
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
       
       const newConversation = {
         question: query,
@@ -132,8 +137,13 @@ export default function Chat() {
       
       setTimeout(scrollToLatestConversation, 100);
     } catch (error) {
-      console.error("Error fetching response:", error);
-      // Add error handling here, e.g., show an error message to the user
+      if (axios.isCancel(error)) {
+        console.log('Request canceled:', error.message);
+      } else {
+        console.error("Error fetching response:", error);
+      }
+      // Add user-facing error handling here
+      alert("An error occurred while fetching the response. Please try again.");
     } finally {
       setIsLoading(false);
       setLoadingQuestionIndex(null);
