@@ -191,29 +191,26 @@ export default function Chat() {
     return null;
   };
 
-  const formatResponse = (text, videoLinks) => {
-    // Replace timestamps with hyperlinks
-    let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
-      const link = videoLinks[`[video${p1}]`];
-      return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
-    });
-    
-    // Format numbered bold text with new line after
-    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div><div class="ml-4">');
-    
-    // Close the div for each numbered item
-    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*[\s\S]*?(?=(\d+)\.\s*\*\*|$)/g, (match) => {
-      return match + '</div>';
-    });
-    
-    // Remove ****timestamp**** before the time stamp video link
-    formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
-    
-    // Make headings and sub-headings bold if they start with **
-    formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
-    
-    return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-  };
+ const formatResponse = (text, videoLinks) => {
+  // Replace timestamps with hyperlinks
+  let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
+    const link = videoLinks[`[video${p1}]`];
+    return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
+  });
+  
+  // Format numbered bold text, including colon, and move content to next line
+  formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)(:?)\*\*\s*([-\s]*)(.+)/g, (match, number, title, colon, dash, content) => {
+    return `<div class="font-bold mt-2 mb-1">${number}. ${title}${colon}</div><div class="ml-4">${dash}${content}</div>`;
+  });
+  
+  // Remove ****timestamp**** before the time stamp video link
+  formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
+  
+  // Make headings and sub-headings bold if they start with **
+  formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
+  
+  return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
+};
 
   return (
     <div className="flex flex-col h-screen bg-white">
