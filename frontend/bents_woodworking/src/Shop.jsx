@@ -40,9 +40,11 @@ export default function Shop() {
   const [showContent, setShowContent] = useState(false)
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProducts = async (retryCount = 0) => {
       try {
-        const response = await axios.get('https://bents-model-backend.vercel.app/documents')
+        const response = await axios.get('https://bents-model-backend.vercel.app/documents', {
+          timeout: 30000 // 30 seconds timeout
+        })
         const formattedProducts = response.data.map(product => ({
           id: product[0],
           title: product[1],
@@ -54,20 +56,25 @@ export default function Shop() {
         setLoading(false)
       } catch (err) {
         console.error('Error fetching products:', err)
-        setError('Failed to fetch products. Please try again later.')
-        setLoading(false)
+        if (retryCount < 3) {
+          console.log(`Retrying... Attempt ${retryCount + 1}`)
+          setTimeout(() => fetchProducts(retryCount + 1), 5000) // Retry after 5 seconds
+        } else {
+          setError('Failed to fetch products. Please try again later.')
+          setLoading(false)
+        }
       }
     }
 
-    // Delay the fetchProducts call by 4 seconds
+    // Delay the initial fetchProducts call by 10 seconds
     const timer = setTimeout(() => {
       fetchProducts()
-    }, 4000)
+    }, 10000)
 
-    // Show content after 4 seconds regardless of fetch status
+    // Show content after 10 seconds regardless of fetch status
     const contentTimer = setTimeout(() => {
       setShowContent(true)
-    }, 4000)
+    }, 10000)
 
     return () => {
       clearTimeout(timer)
