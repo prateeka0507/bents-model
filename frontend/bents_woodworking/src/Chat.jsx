@@ -111,7 +111,7 @@ export default function Chat() {
     
     try {
       // Simulating a longer load time (e.g., 3 seconds)
-       await new Promise(resolve => setTimeout(resolve, 5000));
+       await new Promise(resolve => setTimeout(resolve, 10000));
        const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
