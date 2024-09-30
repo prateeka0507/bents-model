@@ -241,17 +241,7 @@ def chat():
         
         initial_answer = result['answer']
         context = [doc.page_content for doc in result['source_documents']]
-        source_documents = result['source_documents']
-        
-        # Extract video title from metadata of the first source document
-        video_title = "Unknown Video"
-        url = None
-        if source_documents:
-            metadata = source_documents[0].metadata
-            video_title = metadata.get('title', "Unknown Video")
-            url = metadata.get('url', None)
-        
-        logging.debug(f"Extracted video title from chunk metadata: {video_title}")
+        url = result['source_documents'][0].metadata.get('url', '') if result['source_documents'] else None
         
         # Process the answer to replace timestamps and extract video links
         processed_answer, video_dict = process_answer(initial_answer, url)
@@ -327,14 +317,14 @@ def chat():
             logging.info(f"No exact match found for: {source_title}")
         
         logging.debug(f"Final related products: {related_products}")
+        
         response_data = {
-    'initial_answer': initial_answer,
-    'response': processed_answer,
-    'related_products': related_products,
-    'url': url,
-    'context': context,
-    'video_links': video_dict
-}
+            'response': processed_answer,
+            'related_products': related_products,
+            'url': url,
+            'context': context,
+            'video_links': video_dict
+        }
         
         logging.debug(f"Sending response: {response_data}")
         return jsonify(response_data)
