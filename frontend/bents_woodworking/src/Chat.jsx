@@ -345,9 +345,7 @@ export default function Chat() {
                 </div>
                 <div className="clear-both"></div>
               </div>
-
-
-))}
+            ))}
           </div>
         )}
       </div>
