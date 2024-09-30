@@ -198,9 +198,13 @@ export default function Chat() {
       return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
     });
     
-    // Format numbered bold text
-    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
+    // Format numbered bold text with new line after
+    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div><div class="ml-4">');
     
+    // Close the div for each numbered item
+    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*[\s\S]*?(?=(\d+)\.\s*\*\*|$)/g, (match) => {
+      return match + '</div>';
+    });
     
     // Remove ****timestamp**** before the time stamp video link
     formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
@@ -338,10 +342,10 @@ export default function Chat() {
                         key={pIndex} 
                         to={product.link} 
                         className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
-                      >
+                        >
                         <span className="font-medium">{product.title}</span>
                         <ChevronRight size={20} className="ml-2 text-gray-500" />
-</Link>
+                      </Link>
                     ))}
                   </div>
                 </div>
