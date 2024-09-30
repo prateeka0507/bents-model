@@ -12,14 +12,10 @@ const Footer = () => {
           <nav>
             <ul className="flex space-x-4">
               <li>
-                <Link to="/terms" className="text-sm hover:text-gray-300 transition duration-300">
-                  Terms of Service
-                </Link>
+                <span className="text-sm">Terms of Service</span>
               </li>
               <li>
-                <Link to="/privacy" className="text-sm hover:text-gray-300 transition duration-300">
-                  Privacy
-                </Link>
+                <span className="text-sm">Privacy</span>
               </li>
             </ul>
           </nav>
@@ -27,6 +23,6 @@ const Footer = () => {
       </div>
     </footer>
   );
-}
+};
 
 export default Footer;
