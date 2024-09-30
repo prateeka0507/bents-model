@@ -4,12 +4,14 @@ import { ArrowRight, PlusCircle, Menu, ChevronRight, Search, X } from 'lucide-re
 import { Link } from 'react-router-dom';
 import YouTube from 'react-youtube';
 
+// Initial questions
 const initialQuestions = [
   "Best tools for beginners?",
   "Maintain my woodworking tools?",
   "Hardwood and softwood?"
 ];
 
+// Function to extract YouTube video ID from URL
 const getYoutubeVideoId = (url) => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -31,15 +33,19 @@ export default function Chat() {
   const hamburgerRef = useRef(null);
   const latestConversationRef = useRef(null);
 
-  const userId = "user123";
+  // Assume we have a userId for the current user
+  const userId = "user123"; // This should be dynamically set based on your authentication system
 
   useEffect(() => {
+    // Check if this is a new page load or a refresh
     const isNewPageLoad = !sessionStorage.getItem('isPageLoaded');
     
     if (isNewPageLoad) {
+      // This is a new page load (refresh), clear local storage
       localStorage.removeItem('chatData');
       sessionStorage.setItem('isPageLoaded', 'true');
     } else {
+      // This is navigation between pages, try to load data from local storage
       const storedData = localStorage.getItem('chatData');
       if (storedData) {
         const parsedData = JSON.parse(storedData);
@@ -48,10 +54,11 @@ export default function Chat() {
         setSelectedIndex(parsedData.selectedIndex || "bents");
         setShowInitialQuestions(parsedData.conversations.length === 0);
         setIsInitialized(true);
-        return;
+        return; // Exit early as we've loaded the data
       }
     }
 
+    // If no stored data or it's a refresh, fetch from the server
     const fetchUserData = async () => {
       try {
         const response = await axios.get(`https://bents-model-backend.vercel.app/api/user/${userId}`);
@@ -73,6 +80,7 @@ export default function Chat() {
   }, [userId]);
 
   useEffect(() => {
+    // Save data to local storage whenever it changes
     if (isInitialized) {
       localStorage.setItem('chatData', JSON.stringify({
         conversations,
@@ -89,10 +97,10 @@ export default function Chat() {
   };
 
   const handleSearch = async (e, initialQuestionIndex = null) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent the default form submission
     
     const query = initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery;
-    if (!query.trim()) return;
+    if (!query.trim()) return; // Don't search if query is empty
     
     setIsLoading(true);
     if (initialQuestionIndex !== null) {
@@ -118,6 +126,7 @@ export default function Chat() {
       setShowInitialQuestions(false);
       setSearchQuery("");
       
+      // Scroll to the new conversation after it's added
       setTimeout(scrollToLatestConversation, 100);
     } catch (error) {
       console.error("Error fetching response:", error);
@@ -199,6 +208,7 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-screen bg-white">
+      {/* Header */}
       <header className="bg-white p-4 flex justify-between items-center border-b">
         <div 
           ref={hamburgerRef}
@@ -211,6 +221,7 @@ export default function Chat() {
         <div className="w-6"></div>
       </header>
 
+      {/* Sidebar */}
       {showSidebar && (
         <div 
           ref={sidebarRef}
@@ -253,11 +264,13 @@ export default function Chat() {
         </div>
       )}
 
+      {/* Main content */}
       <div className="flex-grow overflow-y-auto">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-4">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
+            {/* Initial Search bar with increased height and grey background */}
             <form onSubmit={handleSearch} className="w-full max-w-2xl mb-8">
               <div className="relative">
                 <input
@@ -281,6 +294,7 @@ export default function Chat() {
               </div>
             </form>
 
+            {/* Initial questions in equal boxes */}
             {showInitialQuestions && (
               <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {initialQuestions.map((question, index) => (
@@ -310,6 +324,7 @@ export default function Chat() {
               >
                 <h2 className="font-bold mb-4">{conv.question}</h2>
                 
+                {/* Related Products */}
                 <div className="mb-4">
                   <h3 className="font-semibold mb-2">Related Products</h3>
                   <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:gap-2">
@@ -326,9 +341,10 @@ export default function Chat() {
                   </div>
                 </div>
 
+                {/* Answer and Video */}
                 <div className="mb-4">
                   {renderVideo(conv.video, conv.videoLinks)}
-                  {formatResponse(conv.text, conv.videoLinks)}
+                {formatResponse(conv.text, conv.videoLinks)}
                 </div>
                 <div className="clear-both"></div>
               </div>
@@ -337,6 +353,7 @@ export default function Chat() {
         )}
       </div>
 
+      {/* Search Bar for non-empty conversations */}
       {conversations.length > 0 && (
         <div className="p-4 bg-gray-100">
           <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
@@ -364,3 +381,5 @@ export default function Chat() {
     </div>
   );
 }
+
+
