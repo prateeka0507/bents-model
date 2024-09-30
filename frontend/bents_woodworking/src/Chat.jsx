@@ -110,9 +110,7 @@ export default function Chat() {
     }
     
     try {
-      // Simulating a longer load time (e.g., 3 seconds)
-       await new Promise(resolve => setTimeout(resolve, 20000));
-       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
@@ -135,6 +133,7 @@ export default function Chat() {
       setTimeout(scrollToLatestConversation, 100);
     } catch (error) {
       console.error("Error fetching response:", error);
+      // Add error handling here, e.g., show an error message to the user
     } finally {
       setIsLoading(false);
       setLoadingQuestionIndex(null);
