@@ -6,9 +6,9 @@ import YouTube from 'react-youtube';
 
 // Initial questions
 const initialQuestions = [
-  "Best tools for beginners?",
-  "Maintain my woodworking tools?",
-  "Hardwood and softwood?"
+  "10 woodworking tools ?",
+  "Explain the shop layout tips ?",
+  "LR 32 benefits for cabinets ?"
 ];
 
 // Function to extract YouTube video ID from URL
