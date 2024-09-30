@@ -191,18 +191,27 @@ export default function Chat() {
     return null;
   };
 
- const formatResponse = (text, videoLinks) => {
-  // Replace timestamps with hyperlinks
-  let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
-    const link = videoLinks[`[video${p1}]`];
-    return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
-  });
-  
-  // Format numbered bold text
-  formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
-  
-  return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-};
+  const formatResponse = (text, videoLinks) => {
+    // Replace timestamps with hyperlinks
+    let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
+      const link = videoLinks[`[video${p1}]`];
+      return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
+    });
+    
+    // Format numbered bold text
+    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
+    
+    // Remove (:-) symbol after bold text
+    formattedText = formattedText.replace(/\*\*(.*?)\*\*\s*\(:-)/, '<strong>$1</strong>');
+    
+    // Remove ****timestamp**** before the time stamp video link
+    formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
+    
+    // Make headings and sub-headings bold if they start with **
+    formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
+    
+    return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
+  };
 
   return (
     <div className="flex flex-col h-screen bg-white">
@@ -337,7 +346,8 @@ export default function Chat() {
                       </Link>
                     ))}
                   </div>
-                </div>
+
+</div>
 
                 {/* Answer and Video */}
                 <div className="mb-4">
