@@ -343,7 +343,7 @@ export default function Chat() {
                       >
                         <span className="font-medium">{product.title}</span>
                         <ChevronRight size={20} className="ml-2 text-gray-500" />
-                      </Link>
+</Link>
                     ))}
                   </div>
                 </div>
@@ -351,7 +351,7 @@ export default function Chat() {
                 {/* Answer and Video */}
                 <div className="mb-4">
                   {renderVideo(conv.video, conv.videoLinks)}
-                {formatResponse(conv.text, conv.videoLinks)}
+                  {formatResponse(conv.text, conv.videoLinks)}
                 </div>
                 <div className="clear-both"></div>
               </div>
@@ -388,7 +388,3 @@ export default function Chat() {
     </div>
   );
 }
-
-
-
-
