@@ -192,16 +192,23 @@ export default function Chat() {
   };
 
   const formatResponse = (text, videoLinks) => {
+    // Replace timestamps with hyperlinks
     let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
       const link = videoLinks[`[video${p1}]`];
       return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
     });
     
+    // Format numbered bold text
     formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
+    
+    // Remove (:-) symbol after bold text
     formattedText = formattedText.replace(/\*\*(.*?)\*\*\s*\(:-)/, '<strong>$1</strong>');
+    
+    // Remove ****timestamp**** before the time stamp video link
     formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
+    
+    // Make headings and sub-headings bold if they start with **
     formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
-    formattedText = formattedText.replace(/\*\*(.*?)\*\*:/, '<strong>$1:</strong>');
     
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
@@ -381,5 +388,7 @@ export default function Chat() {
     </div>
   );
 }
+
+
 
 
