@@ -3,6 +3,7 @@ import axios from 'axios'
 import { Button } from './components/ui/button.jsx'
 import { Card, CardContent, CardFooter } from './components/ui/card.jsx'
 import { Loader2, ExternalLink } from 'lucide-react'
+
 function ProductCard({ product }) {
   return (
     <Card className="w-full flex flex-col h-full">
@@ -31,38 +32,57 @@ function ProductCard({ product }) {
     </Card>
   )
 }
+
 export default function Shop() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showContent, setShowContent] = useState(false)
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get('https://bents-model-backend.vercel.app/documents')
-        // Assuming the backend returns an array of arrays with [id, title, tags, link]
         const formattedProducts = response.data.map(product => ({
           id: product[0],
           title: product[1],
           tags: product[2],
           link: product[3],
-          image: product[4], // This should be the image data URL from the backend
+          image: product[4],
         }))
         setProducts(formattedProducts)
         setLoading(false)
       } catch (err) {
+        console.error('Error fetching products:', err)
         setError('Failed to fetch products. Please try again later.')
         setLoading(false)
       }
     }
-    fetchProducts()
+
+    // Delay the fetchProducts call by 4 seconds
+    const timer = setTimeout(() => {
+      fetchProducts()
+    }, 4000)
+
+    // Show content after 4 seconds regardless of fetch status
+    const contentTimer = setTimeout(() => {
+      setShowContent(true)
+    }, 4000)
+
+    return () => {
+      clearTimeout(timer)
+      clearTimeout(contentTimer)
+    }
   }, [])
-  if (loading) {
+
+  if (!showContent) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
+
   if (error) {
     return (
       <div className="text-center mt-8 text-red-500" role="alert">
@@ -73,6 +93,7 @@ export default function Shop() {
       </div>
     )
   }
+
   return (
     <div className="container mx-auto px-2 py-4 max-w-7xl">
       <header className="mb-6">
@@ -81,11 +102,17 @@ export default function Shop() {
         </h1>
       </header>
       <main>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   )
