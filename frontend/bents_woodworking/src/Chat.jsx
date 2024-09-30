@@ -203,13 +203,6 @@ export default function Chat() {
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSearch(e);
-    }
-  };
-
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Header */}
@@ -281,7 +274,6 @@ export default function Chat() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
                   placeholder="Ask anything..."
                   className="w-full p-6 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
                 />
@@ -353,7 +345,9 @@ export default function Chat() {
                 </div>
                 <div className="clear-both"></div>
               </div>
-            ))}
+
+
+))}
           </div>
         )}
       </div>
@@ -366,7 +360,6 @@ export default function Chat() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
               placeholder="Ask a question..."
               className="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
             />
