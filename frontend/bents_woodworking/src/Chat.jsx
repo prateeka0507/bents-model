@@ -191,15 +191,15 @@ export default function Chat() {
     return null;
   };
 
- const formatResponse = (text, videoLinks) => {
+const formatResponse = (text, videoLinks) => {
   // Replace timestamps with hyperlinks
   let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
     const link = videoLinks[`[video${p1}]`];
     return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
   });
   
-  // Format numbered bold text, including colon, and move content to next line
-  formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)(:?)\*\*\s*([-\s]*)(.+)/g, (match, number, title, colon, dash, content) => {
+  // Format numbered bold text, including colon on the same line, and move content to next line
+  formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*(:?)\s*([-\s]*)(.+)/g, (match, number, title, colon, dash, content) => {
     return `<div class="font-bold mt-2 mb-1">${number}. ${title}${colon}</div><div class="ml-4">${dash}${content}</div>`;
   });
   
