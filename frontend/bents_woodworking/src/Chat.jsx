@@ -111,12 +111,12 @@ export default function Chat() {
     
     try {
       // Simulating a longer load time (e.g., 3 seconds)
-      await new Promise(resolve => setTimeout(resolve, 10000));
-
-      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
+      }, {
+        timeout: 30000 // 30 seconds timeout
       });
       
       const newConversation = {
