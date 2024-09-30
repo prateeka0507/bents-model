@@ -248,73 +248,49 @@ def chat():
         
         logging.debug(f"Processed answer: {processed_answer}")
         
-        # Get the title from the source document
-        source_title = result['source_documents'][0].metadata.get('title', '') if result['source_documents'] else ''
-        print(f"Video title returned from transcript index: {source_title}")
-        logging.info(f"Video title returned from transcript index: {source_title}")
+        # Get embedding for the processed answer
+        answer_embedding = embeddings.embed_query(processed_answer)
         
-        # List of product index titles
-        product_index_titles = [
-            "5 Modifications I Made In My Garage Shop - New Shop Part 5",
-            "2020 Shop Tour",
-            "American Green Lights",
-            "Assembly Table and Miter Saw Station",
-            "Complete Mr Cool Install",
-            "Every track saw owner could use this",
-            "How To Install Mr Cool DIY Series",
-            "I Built a Wall in my Garage",
-            "Moving A Woodworking Shop - New Shop Part 2",
-            "My shop is soundproof",
-            "People Told Me My Garage Door Would Explode",
-            "The biggest advancement in dust collection",
-            "Using SketchUp To Design Woodworking Shop - New Shop Part 1",
-            "8 Tools I Regret Not Buying Sooner",
-            "10 Tools Every Woodworker Should Own",
-            "10 woodworking tools I regret not buying sooner",
-            "10 Woodworking tools you will not regret",
-            "11 woodworking tools you need to own",
-            "12 Tools I will Never REGRET Buying",
-            "15 cabinet tools I do not regret",
-            "15 Woodworking Tools You Will not Regret",
-            "25 tools I regret not buying sooner",
-            "Every track saw owner could use this",
-            "FINALLY! The sprayer I have been waiting for",
-            "I would not buy these with your money",
-            "Stop wasting your money on the wrong ones",
-            "The 5 TSO tools you cannot live without",
-            "Track Saw Square Comparison TSO ProductsBench Dogs UKWoodpeckers ToolsInsta Rail Square"
-        ]
+        logging.debug(f"Generated answer embedding. Shape: {len(answer_embedding)}")
         
-        related_products = []
+        # Use answer embedding for product search
+        product_index = pc.Index(PRODUCT_INDEX_NAME)
+        logging.debug(f"Querying product index: {PRODUCT_INDEX_NAME}")
         
-        if source_title in product_index_titles:
-            print(f"Exact match found: {source_title}")
-            logging.info(f"Exact match found: {source_title}")
-            # Use title for product search
-            product_index = pc.Index(PRODUCT_INDEX_NAME)
-            logging.debug(f"Querying product index: {PRODUCT_INDEX_NAME}")
+        try:
+            product_results = product_index.query(
+                vector=answer_embedding,
+                top_k=5,  # Retrieve more products to ensure we get all
+                include_metadata=True
+            )
+            logging.debug(f"Product search results: {product_results}")
+        except Exception as e:
+            logging.error(f"Error querying product index: {str(e)}")
+            product_results = {'matches': []}
+        
+        matching_products = []
+        non_matching_products = []
+        
+        for match in product_results['matches']:
+            logging.debug(f"Processing match: {match}")
+            product = {
+                'title': match['metadata'].get('title', 'Untitled'),
+                'tags': match['metadata'].get('tags', ''),
+                'link': match['metadata'].get('link', '')
+            }
             
-            try:
-                # Query the product index using the title
-                product_results = product_index.query(
-                    vector=embeddings.embed_query(source_title),
-                    top_k=15,
-                    include_metadata=True
-                )
-                logging.debug(f"Product search results: {product_results}")
-
-                for match in product_results['matches']:
-                    product = {
-                        'title': match['metadata'].get('title', 'Untitled'),
-                        'tags': match['metadata'].get('tags', ''),
-                        'link': match['metadata'].get('link', '')
-                    }
-                    related_products.append(product)
-            except Exception as e:
-                logging.error(f"Error querying product index: {str(e)}")
-        else:
-            print(f"No exact match found for: {source_title}")
-            logging.info(f"No exact match found for: {source_title}")
+            tags = match['metadata'].get('tags', '').split(',')
+            logging.debug(f"Tags for product: {tags}")
+            
+            if any(tag.strip().lower() in processed_answer.lower() for tag in tags):
+                matching_products.append(product)
+                logging.debug(f"Added matching product: {product}")
+            else:
+                non_matching_products.append(product)
+                logging.debug(f"Added non-matching product: {product}")
+        
+        # Combine matching and non-matching products, with matching ones first
+        related_products = matching_products + non_matching_products
         
         logging.debug(f"Final related products: {related_products}")
         
@@ -326,11 +302,11 @@ def chat():
             'video_links': video_dict
         }
         
-        logging.debug(f"Sending response: {response_data}")
         return jsonify(response_data)
     except Exception as e:
         logging.error(f"Error in chat route: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred processing your request'}), 500
+    
     
 @app.route('/upload_document', methods=['POST'])
 def upload_document():
