@@ -29,6 +29,7 @@ export default function Chat() {
   const [loadingQuestionIndex, setLoadingQuestionIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const sidebarRef = useRef(null);
   const hamburgerRef = useRef(null);
   const latestConversationRef = useRef(null);
@@ -97,11 +98,12 @@ export default function Chat() {
   };
 
   const handleSearch = async (e, initialQuestionIndex = null) => {
-    e.preventDefault(); // Prevent the default form submission
+    e.preventDefault();
     
     const query = initialQuestionIndex !== null ? initialQuestions[initialQuestionIndex] : searchQuery;
-    if (!query.trim()) return; // Don't search if query is empty
+    if (!query.trim() || isSearching) return;
     
+    setIsSearching(true);
     setIsLoading(true);
     if (initialQuestionIndex !== null) {
       setLoadingQuestionIndex(initialQuestionIndex);
@@ -126,13 +128,13 @@ export default function Chat() {
       setShowInitialQuestions(false);
       setSearchQuery("");
       
-      // Scroll to the new conversation after it's added
       setTimeout(scrollToLatestConversation, 100);
     } catch (error) {
       console.error("Error fetching response:", error);
     } finally {
       setIsLoading(false);
       setLoadingQuestionIndex(null);
+      setIsSearching(false);
     }
   };
 
@@ -191,26 +193,26 @@ export default function Chat() {
     return null;
   };
 
-const formatResponse = (text, videoLinks) => {
-  // Replace timestamps with hyperlinks
-  let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
-    const link = videoLinks[`[video${p1}]`];
-    return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
-  });
-  
-  // Format numbered bold text, including colon on the same line, and move content to next line
-  formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*(:?)\s*([-\s]*)(.+)/g, (match, number, title, colon, dash, content) => {
-    return `<div class="font-bold mt-2 mb-1">${number}. ${title}${colon}</div><div class="ml-4">${dash}${content}</div>`;
-  });
-  
-  // Remove ****timestamp**** before the time stamp video link
-  formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
-  
-  // Make headings and sub-headings bold if they start with **
-  formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
-  
-  return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-};
+  const formatResponse = (text, videoLinks) => {
+    // Replace timestamps with hyperlinks
+    let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
+      const link = videoLinks[`[video${p1}]`];
+      return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
+    });
+    
+    // Format numbered bold text, including colon on the same line, and move content to next line
+    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*(:?)\s*([-\s]*)(.+)/g, (match, number, title, colon, dash, content) => {
+      return `<div class="font-bold mt-2 mb-1">${number}. ${title}${colon}</div><div class="ml-4">${dash}${content}</div>`;
+    });
+    
+    // Remove ****timestamp**** before the time stamp video link
+    formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
+    
+    // Make headings and sub-headings bold if they start with **
+    formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
+    
+    return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
+  };
 
   return (
     <div className="flex flex-col h-screen bg-white">
@@ -289,9 +291,9 @@ const formatResponse = (text, videoLinks) => {
                 <button
                   type="submit"
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  disabled={isLoading || !searchQuery.trim()}
+                  disabled={isSearching || isLoading || !searchQuery.trim()}
                 >
-                  {isLoading ? (
+                  {isSearching || isLoading ? (
                     <span className="animate-spin">⌛</span>
                   ) : (
                     <ArrowRight size={24} />
@@ -308,7 +310,7 @@ const formatResponse = (text, videoLinks) => {
                     key={index}
                     onClick={(e) => handleSearch(e, index)}
                     className="p-4 border rounded-lg hover:bg-gray-100 text-center h-full flex items-center justify-center transition-colors duration-200 ease-in-out relative"
-                    disabled={isLoading || loadingQuestionIndex !== null}
+                    disabled={isSearching || isLoading || loadingQuestionIndex !== null}
                   >
                     {loadingQuestionIndex === index ? (
                       <span className="animate-spin absolute">⌛</span>
@@ -373,9 +375,9 @@ const formatResponse = (text, videoLinks) => {
             <button
               type="submit"
               className="bg-blue-500 text-white p-2 rounded-r-lg hover:bg-blue-600"
-              disabled={isLoading || !searchQuery.trim()}
+              disabled={isSearching || isLoading || !searchQuery.trim()}
             >
-              {isLoading ? (
+              {isSearching || isLoading ? (
                 <span className="animate-spin">⌛</span>
               ) : (
                 <Search size={20} />
