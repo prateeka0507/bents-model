@@ -347,7 +347,6 @@ export default function Chat() {
                     ))}
                   </div>
 
-</div>
 
                 {/* Answer and Video */}
                 <div className="mb-4">
