@@ -42,10 +42,9 @@ export default function Shop() {
     const fetchProducts = async (retryCount = 0) => {
       try {
         // Delay the fetch by 10 seconds
-        await new Promise(resolve => setTimeout(resolve, 10000));
 
         const response = await axios.get('https://bents-model-backend.vercel.app/documents', {
-          timeout: 5000 // 60 seconds timeout
+          timeout: 600000 // 60 seconds timeout
         })
         const formattedProducts = response.data.map(product => ({
           id: product[0],
