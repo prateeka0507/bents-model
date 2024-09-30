@@ -191,19 +191,18 @@ export default function Chat() {
     return null;
   };
 
-  const formatResponse = (text, videoLinks) => {
-    // Replace timestamps with hyperlinks
-    let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
-      const link = videoLinks[`[video${p1}]`];
-      return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
-    });
-    
-    // Format points and numbered bold text
-    formattedText = formattedText.replace(/^- (.*?)$/gm, '<li>• $1</li>');
-    formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
-    
-    return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-  };
+ const formatResponse = (text, videoLinks) => {
+  // Replace timestamps with hyperlinks
+  let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
+    const link = videoLinks[`[video${p1}]`];
+    return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
+  });
+  
+  // Format numbered bold text
+  formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
+  
+  return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
+};
 
   return (
     <div className="flex flex-col h-screen bg-white">
