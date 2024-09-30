@@ -112,7 +112,7 @@ export default function Chat() {
     try {
       // Simulating a longer load time (e.g., 3 seconds)
        const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
-       message: query,
+        message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
       }, {
@@ -336,25 +336,25 @@ export default function Chat() {
                 <h2 className="font-bold mb-4">{conv.question}</h2>
                 
                 {/* Related Products */}
-<div className="mb-4">
-  <h3 className="font-semibold mb-2">Related Products</h3>
-  {conv.products && conv.products.length > 0 ? (
-    <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:gap-2">
-      {conv.products.map((product, pIndex) => (
-        <Link 
-          key={pIndex} 
-          to={product.link} 
-          className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
-        >
-          <span className="font-medium">{product.title}</span>
-          <ChevronRight size={20} className="ml-2 text-gray-500" />
-        </Link>
-      ))}
-    </div>
-  ) : (
-    <p className="text-gray-600 italic">No related products available at the moment.</p>
-  )}
-</div>
+                <div className="mb-4">
+                  <h3 className="font-semibold mb-2">Related Products</h3>
+                  {conv.products && conv.products.length > 0 ? (
+                    <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:gap-2">
+                      {conv.products.map((product, pIndex) => (
+                        <Link 
+                          key={pIndex} 
+                          to={product.link} 
+                          className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
+                        >
+                          <span className="font-medium">{product.title}</span>
+                          <ChevronRight size={20} className="ml-2 text-gray-500" />
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-600 italic">No related products available at the moment.</p>
+                  )}
+                </div>
 
                 {/* Answer and Video */}
                 <div className="mb-4">
