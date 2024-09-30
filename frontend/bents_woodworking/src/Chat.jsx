@@ -210,6 +210,9 @@ export default function Chat() {
     // Make headings and sub-headings bold if they start with **
     formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
     
+    // Merge colon with bold text when it appears immediately after
+    formattedText = formattedText.replace(/\*\*(.*?)\*\*:/, '<strong>$1:</strong>');
+    
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
 
@@ -339,8 +342,7 @@ export default function Chat() {
                       <Link 
                         key={pIndex} 
                         to={product.link} 
-                        className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
-                      >
+                        className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0">
                         <span className="font-medium">{product.title}</span>
                         <ChevronRight size={20} className="ml-2 text-gray-500" />
                       </Link>
@@ -351,7 +353,7 @@ export default function Chat() {
                 {/* Answer and Video */}
                 <div className="mb-4">
                   {renderVideo(conv.video, conv.videoLinks)}
-                {formatResponse(conv.text, conv.videoLinks)}
+                  {formatResponse(conv.text, conv.videoLinks)}
                 </div>
                 <div className="clear-both"></div>
               </div>
