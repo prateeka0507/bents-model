@@ -200,7 +200,7 @@ export default function Chat() {
   
   // Format numbered bold text, including colon, and move content to next line
   formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)(:?)\*\*\s*([-\s]*)(.+)/g, (match, number, title, colon, dash, content) => {
-    return `<div class="font-bold mt-2 mb-1">${number}. ${title}</div><div class="ml-4">${dash}${content}</div>`;
+    return `<div class="font-bold mt-2 mb-1">${number}. ${title}${colon}</div><div class="ml-4">${dash}${content}</div>`;
   });
   
   // Remove ****timestamp**** before the time stamp video link
