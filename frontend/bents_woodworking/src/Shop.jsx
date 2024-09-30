@@ -37,13 +37,15 @@ export default function Shop() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [showContent, setShowContent] = useState(false)
 
   useEffect(() => {
     const fetchProducts = async (retryCount = 0) => {
       try {
+        // Delay the fetch by 10 seconds
+        await new Promise(resolve => setTimeout(resolve, 10000));
+
         const response = await axios.get('https://bents-model-backend.vercel.app/documents', {
-          timeout: 30000 // 30 seconds timeout
+          timeout: 60000 // 60 seconds timeout
         })
         const formattedProducts = response.data.map(product => ({
           id: product[0],
@@ -66,29 +68,8 @@ export default function Shop() {
       }
     }
 
-    // Delay the initial fetchProducts call by 10 seconds
-    const timer = setTimeout(() => {
-      fetchProducts()
-    }, 10000)
-
-    // Show content after 10 seconds regardless of fetch status
-    const contentTimer = setTimeout(() => {
-      setShowContent(true)
-    }, 10000)
-
-    return () => {
-      clearTimeout(timer)
-      clearTimeout(contentTimer)
-    }
+    fetchProducts()
   }, [])
-
-  if (!showContent) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
 
   if (error) {
     return (
