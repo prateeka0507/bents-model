@@ -342,13 +342,15 @@ export default function Chat() {
                       <Link 
                         key={pIndex} 
                         to={product.link} 
-                        className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0">
+                        className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
+                      >
                         <span className="font-medium">{product.title}</span>
                         <ChevronRight size={20} className="ml-2 text-gray-500" />
                       </Link>
                     ))}
                   </div>
-                </div>
+
+</div>
 
                 {/* Answer and Video */}
                 <div className="mb-4">
