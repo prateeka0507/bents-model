@@ -342,7 +342,6 @@ def chat():
         logging.error(f"Error in chat route: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred processing your request'}), 500
     
-    
 @app.route('/upload_document', methods=['POST'])
 def upload_document():
     if 'file' not in request.files:
