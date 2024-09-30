@@ -11,7 +11,7 @@ const port = 5002;
 
 const options = [
   cors({
-    origin: '*',
+    origin: ['https://bents-model-frontend.vercel.app', '*'], 
     methods: '*',
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
