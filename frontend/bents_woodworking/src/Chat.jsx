@@ -110,6 +110,9 @@ export default function Chat() {
     }
     
     try {
+      // Simulating a longer load time (e.g., 3 seconds)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
@@ -341,7 +344,7 @@ export default function Chat() {
                         key={pIndex} 
                         to={product.link} 
                         className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
-                        >
+                      >
                         <span className="font-medium">{product.title}</span>
                         <ChevronRight size={20} className="ml-2 text-gray-500" />
                       </Link>
