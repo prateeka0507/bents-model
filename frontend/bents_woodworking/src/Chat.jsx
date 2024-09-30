@@ -201,8 +201,6 @@ export default function Chat() {
     // Format numbered bold text
     formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*/g, '<div class="font-bold mt-2 mb-1">$1. $2</div>');
     
-    // Remove (:-) symbol after bold text
-    formattedText = formattedText.replace(/\*\*(.*?)\*\*\s*\(:-)/, '<strong>$1</strong>');
     
     // Remove ****timestamp**** before the time stamp video link
     formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
