@@ -110,18 +110,15 @@ export default function Chat() {
     }
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
-
-      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+      // Simulating a longer load time (e.g., 3 seconds)
+       await new Promise(resolve => setTimeout(resolve, 20000));
+       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.text])
       }, {
-        signal: controller.signal
+        timeout: 30000 // 30 seconds timeout
       });
-
-      clearTimeout(timeoutId);
       
       const newConversation = {
         question: query,
@@ -137,23 +134,7 @@ export default function Chat() {
       
       setTimeout(scrollToLatestConversation, 100);
     } catch (error) {
-      if (axios.isCancel(error)) {
-        console.log('Request canceled:', error.message);
-        alert("The request took too long to respond. Please try again.");
-      } else if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error("Server responded with error:", error.response.status, error.response.data);
-        alert(`Server error: ${error.response.status}. Please try again later.`);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error("No response received:", error.request);
-        alert("No response from server. Please check your internet connection and try again.");
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        console.error("Error setting up request:", error.message);
-        alert("An unexpected error occurred. Please try again.");
-      }
+      console.error("Error fetching response:", error);
     } finally {
       setIsLoading(false);
       setLoadingQuestionIndex(null);
@@ -412,3 +393,5 @@ export default function Chat() {
     </div>
   );
 }
+
+
