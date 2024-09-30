@@ -211,9 +211,6 @@ export default function Chat() {
     // Make headings and sub-headings bold if they start with **
     formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
     
-    // New formatting: Align text enclosed in asterisks on a new line and treat as heading
-    formattedText = formattedText.replace(/\*\*\*\*(.*?)\*\*\*\*:/g, '\n<h3 class="font-bold mt-4 mb-2">$1</h3>\n');
-    
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
 
