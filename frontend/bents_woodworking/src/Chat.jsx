@@ -346,12 +346,12 @@ export default function Chat() {
                       </Link>
                     ))}
                   </div>
-
+                </div>
 
                 {/* Answer and Video */}
                 <div className="mb-4">
                   {renderVideo(conv.video, conv.videoLinks)}
-                  {formatResponse(conv.text, conv.videoLinks)}
+                {formatResponse(conv.text, conv.videoLinks)}
                 </div>
                 <div className="clear-both"></div>
               </div>
@@ -360,7 +360,7 @@ export default function Chat() {
         )}
       </div>
 
-     {/* Search Bar for non-empty conversations */}
+      {/* Search Bar for non-empty conversations */}
       {conversations.length > 0 && (
         <div className="p-4 bg-gray-100">
           <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
