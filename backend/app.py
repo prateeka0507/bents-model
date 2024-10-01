@@ -241,67 +241,98 @@ def chat():
         
         initial_answer = result['answer']
         context = [doc.page_content for doc in result['source_documents']]
-        url = result['source_documents'][0].metadata.get('url', '') if result['source_documents'] else None
+        source_documents = result['source_documents']
         
+        # Extract video title from metadata of the first source document
+        video_title = "Unknown Video"
+        url = None
+        if source_documents:
+            metadata = source_documents[0].metadata
+            video_title = metadata.get('title', "Unknown Video")
+            url = metadata.get('url', None)
+
+        logging.debug(f"Extracted video title from chunk metadata: {video_title}")
+
+        # List of video titles
+        video_title_list = [
+            "5 Modifications I Made In My Garage Shop - New Shop Part 5",
+            "2020 Shop Tour",
+            "American Green Lights",
+            "Assembly Table and Miter Saw Station",
+            "Complete Mr Cool Install",
+            "Every track saw owner could use this",
+            "How To Install Mr Cool DIY Series",
+            "I Built a Wall in my Garage",
+            "Moving A Woodworking Shop - New Shop Part 2",
+            "My shop is soundproof",
+            "People Told Me My Garage Door Would Explode",
+            "The biggest advancement in dust collection",
+            "Using SketchUp To Design Woodworking Shop - New Shop Part 1",
+            "8 Tools I Regret Not Buying Sooner",
+            "10 Tools Every Woodworker Should Own",
+            "10 woodworking tools I regret not buying sooner",
+            "10 Woodworking tools you will not regret",
+            "11 woodworking tools you need to own",
+            "12 Tools I will Never REGRET Buying",
+            "15 cabinet tools I do not regret",
+            "15 Woodworking Tools You Will not Regret",
+            "25 tools I regret not buying sooner",
+            "Every track saw owner could use this",
+            "FINALLY! The sprayer I have been waiting for",
+            "I would not buy these with your money",
+            "Stop wasting your money on the wrong ones",
+            "The 5 TSO tools you cannot live without",
+            "Track Saw Square Comparison TSO ProductsBench Dogs UKWoodpeckers ToolsInsta Rail Square"
+        ]
+
         # Process the answer to replace timestamps and extract video links
         processed_answer, video_dict = process_answer(initial_answer, url)
         
         logging.debug(f"Processed answer: {processed_answer}")
         
-        # Get embedding for the processed answer
-        answer_embedding = embeddings.embed_query(processed_answer)
+        related_products = []
         
-        logging.debug(f"Generated answer embedding. Shape: {len(answer_embedding)}")
-        
-        # Use answer embedding for product search
-        product_index = pc.Index(PRODUCT_INDEX_NAME)
-        logging.debug(f"Querying product index: {PRODUCT_INDEX_NAME}")
-        
-        try:
-            product_results = product_index.query(
-                vector=answer_embedding,
-                top_k=5,  # Retrieve more products to ensure we get all
-                include_metadata=True
-            )
-            logging.debug(f"Product search results: {product_results}")
-        except Exception as e:
-            logging.error(f"Error querying product index: {str(e)}")
-            product_results = {'matches': []}
-        
-        matching_products = []
-        non_matching_products = []
-        
-        for match in product_results['matches']:
-            logging.debug(f"Processing match: {match}")
-            product = {
-                'title': match['metadata'].get('title', 'Untitled'),
-                'tags': match['metadata'].get('tags', ''),
-                'link': match['metadata'].get('link', '')
-            }
-            
-            tags = match['metadata'].get('tags', '').split(',')
-            logging.debug(f"Tags for product: {tags}")
-            
-            if any(tag.strip().lower() in processed_answer.lower() for tag in tags):
-                matching_products.append(product)
-                logging.debug(f"Added matching product: {product}")
-            else:
-                non_matching_products.append(product)
-                logging.debug(f"Added non-matching product: {product}")
-        
-        # Combine matching and non-matching products, with matching ones first
-        related_products = matching_products + non_matching_products
-        
+        # Check if the video title is in the list
+        if video_title in video_title_list:
+            try:
+                product_index = pc.Index(PRODUCT_INDEX_NAME)
+                logging.debug(f"Querying product index: {PRODUCT_INDEX_NAME}")
+                
+                product_results = product_index.query(
+                    vector=embeddings.embed_query(video_title),
+                    top_k=15,
+                    include_metadata=True
+                )
+                logging.debug(f"Product search results: {product_results}")
+                
+                for match in product_results['matches']:
+                    try:
+                        product = {
+                            'id': match['id'],
+                            'title': match['metadata'].get('title', 'Untitled'),
+                            'tags': match['metadata'].get('tags', ''),
+                            'link': match['metadata'].get('link', ''),
+                            'score': match['score']
+                        }
+                        related_products.append(product)
+                        logging.debug(f"Retrieved product: {product}")
+                    except Exception as e:
+                        logging.error(f"Error processing product match: {str(e)}")
+                        logging.debug(f"Problematic match data: {match}")
+            except Exception as e:
+                logging.error(f"Error querying product index: {str(e)}")
+
         logging.debug(f"Final related products: {related_products}")
-        
+
         response_data = {
             'response': processed_answer,
             'related_products': related_products,
             'url': url,
             'context': context,
-            'video_links': video_dict
+            'video_links': video_dict,
+            'video_title': video_title
         }
-        
+
         return jsonify(response_data)
     except Exception as e:
         logging.error(f"Error in chat route: {str(e)}", exc_info=True)
