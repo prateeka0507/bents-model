@@ -20,14 +20,10 @@ load_dotenv()
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {
-    {"origins": [
+CORS(app, resources={r"/*": {"origins": [
     "https://bents-model-backend.vercel.app",
-    "https://bents-model-frontend.vercel.app"],
-    "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-    "allow_headers": ["Content-Type", "Authorization"],
-    "supports_credentials": True
-}})
+    "https://bents-model-frontend.vercel.app"
+]}})
 
 
 app.secret_key = os.urandom(24)  # Set a secret key for sessions
