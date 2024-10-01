@@ -6,9 +6,9 @@ import YouTube from 'react-youtube';
 
 // Initial questions
 const initialQuestions = [
-  "10 woodworking tools ?",
-  "Explain the shop layout tips ?",
-  "LR 32 benefits for cabinets ?"
+  "What are the 10 most recommended woodworking tools?",
+  "Suggest me some shop layout tips?",
+  "What are the benefits of LR32 system for cabinetry?",
 ];
 
 // Function to extract YouTube video ID from URL
