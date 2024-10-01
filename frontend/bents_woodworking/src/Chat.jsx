@@ -111,7 +111,7 @@ export default function Chat() {
     
     try {
       // Simulating a longer load time (e.g., 3 seconds)
-       const response = await axios.post('http://localhost:5002/chat', {
+       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.initial_answer || conv.text])
