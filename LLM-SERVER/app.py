@@ -380,13 +380,13 @@ def chat():
         logging.debug(f"Final related products: {related_products}")
 
         response_data = {
-            'response': processed_answer,
-            'initial_answer': initial_answer,
-            'related_products': related_products,
-            'url': url,
-            'context': context,
-            'video_links': video_dict,
-            'video_title': video_title
+    'response': processed_answer,
+    'initial_answer': initial_answer,
+    'related_products': related_products,
+    'url': url,
+    'context': context,
+    'video_links': video_dict,
+    'video_title': video_title
 }
 
         return jsonify(response_data)
