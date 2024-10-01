@@ -110,12 +110,12 @@ export default function Chat() {
     }
     
     try {
-      // Simulating a longer load time (e.g., 3 seconds)
-       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+      // Simulating a longer load time (e.g., 30 seconds)
+      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.initial_answer || conv.text])
-}, {
+      }, {
         timeout: 30000 // 30 seconds timeout
       });
       
@@ -126,7 +126,7 @@ export default function Chat() {
         video: response.data.url,
         products: response.data.related_products,
         videoLinks: response.data.video_links
-};
+      };
       setConversations(prevConversations => [...prevConversations, newConversation]);
       setSearchHistory(prevHistory => [...prevHistory, query]);
       setShowInitialQuestions(false);
