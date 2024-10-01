@@ -247,9 +247,18 @@ def chat():
         
         relevance_response = llm.predict(relevance_check_prompt)
         
-        if "INAPPROPRIATE" in relevance_response.upper():
+        if "GREETING" in relevance_response.upper():
+            greeting_response = llm.predict("Generate a friendly greeting response for a woodworking assistant.")
             return jsonify({
-                'response': "I'm sorry, but this outside my context of answering. Is there something else I can help you with regarding woodworking, tools, or home improvement?",
+                'response': greeting_response,
+                'related_products': [],
+                'url': None,
+                'context': [],
+                'video_links': {}
+            })
+        elif "INAPPROPRIATE" in relevance_response.upper():
+            return jsonify({
+                'response': "I'm sorry, but this is outside my context of answering. Is there something else I can help you with regarding woodworking, tools, or home improvement?",
                 'related_products': [],
                 'url': None,
                 'context': [],
