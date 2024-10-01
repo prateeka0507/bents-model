@@ -229,7 +229,7 @@ def chat():
         relevance_check_prompt = f"""
         Given the following question or message and the chat history, determine if it is:
         1. A greeting or general conversation starter
-        2. Related to woodworking, tools, home improvement, or the assistant's capabilities
+        2. Related to woodworking, tools, home improvement, or the assistant's capabilities and also query about bents-woodworking youtube channel general questions.
         3. Related to the company, its products, services, or business operations
         4. A continuation or follow-up question to the previous conversation
         5. Related to violence, harmful activities, or other inappropriate content
