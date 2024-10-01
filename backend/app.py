@@ -208,11 +208,21 @@ def chat():
         data = request.json
         logging.debug(f"Received data: {data}")
 
-        user_query = data['message']
+        user_query = data['message'].strip()
         selected_index = data['selected_index']
         chat_history = data.get('chat_history', [])
 
         logging.debug(f"Chat history received: {chat_history}")
+
+        # Initial input validation
+        if not user_query or user_query in ['.', ',', '?', '!']:
+            return jsonify({
+                'response': "I'm sorry, but I didn't receive a valid question. Could you please ask a complete question?",
+                'related_products': [],
+                'url': None,
+                'context': [],
+                'video_links': {}
+            })
 
         # Format chat history for ConversationalRetrievalChain
         formatted_history = []
@@ -222,6 +232,47 @@ def chat():
             formatted_history.append((human, ai))
 
         logging.debug(f"Formatted chat history: {formatted_history}")
+
+        # Relevance check
+        relevance_check_prompt = f"""
+        Given the following question or message and the chat history, determine if it is:
+        1. A greeting or general conversation starter
+        2. Related to woodworking, tools, home improvement, or the assistant's capabilities
+        3. Related to the company, its products, services, or business operations
+        4. A continuation or follow-up question to the previous conversation
+        5. Related to violence, harmful activities, or other inappropriate content
+        6. Completely unrelated to the above topics and not a continuation of the conversation
+
+        If it falls under categories 1, 2, 3, or 4, respond with 'RELEVANT'.
+        If it falls under category 5, respond with 'INAPPROPRIATE'.
+        If it falls under category 6, respond with 'NOT RELEVANT'.
+
+        Chat History:
+        {formatted_history[-3:] if formatted_history else "No previous context"}
+
+        Current Question: {user_query}
+        
+        Response (RELEVANT, INAPPROPRIATE, or NOT RELEVANT):
+        """
+        
+        relevance_response = llm.predict(relevance_check_prompt)
+        
+        if "INAPPROPRIATE" in relevance_response.upper():
+            return jsonify({
+                'response': "I'm sorry, but this outside my context of answering. Is there something else I can help you with regarding woodworking, tools, or home improvement?",
+                'related_products': [],
+                'url': None,
+                'context': [],
+                'video_links': {}
+            })
+        elif "NOT RELEVANT" in relevance_response.upper():
+            return jsonify({
+                'response': "I'm sorry, but I'm specialized in topics related to our company, woodworking, tools, and home improvement. I can also engage in general conversation or continue our previous discussion. Could you please ask a question related to these topics, continue our previous conversation, or start with a greeting?",
+                'related_products': [],
+                'url': None,
+                'context': [],
+                'video_links': {}
+            })
 
         retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 3})
         
@@ -321,6 +372,8 @@ def chat():
                         logging.debug(f"Problematic match data: {match}")
             except Exception as e:
                 logging.error(f"Error querying product index: {str(e)}")
+        else:
+            logging.info(f"Video title '{video_title}' not found in the list. No products retrieved.")
 
         logging.debug(f"Final related products: {related_products}")
 
