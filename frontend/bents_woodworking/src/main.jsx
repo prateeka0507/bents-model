@@ -9,7 +9,7 @@ const Root = () => (
   <StrictMode>
     <Helmet>
       <title>Bent's Woodworking Assistant</title>
-      <link rel="icon" type="image/png" href="/path-to-your-favicon.png" />
+      <link rel="icon" type="image/png" href="/bents-logo.jpg" />
     </Helmet>
     <BrowserRouter>
       <App />
