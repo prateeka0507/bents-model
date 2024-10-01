@@ -232,8 +232,10 @@ def chat():
         4. A continuation or follow-up question to the previous conversation
         5. Related to violence, harmful activities, or other inappropriate content
         6. Completely unrelated to the above topics and not a continuation of the conversation
+        7. if user is asking about jason bents.
 
-        If it falls under categories 1, 2, 3, or 4, respond with 'RELEVANT'.
+        If it falls under category 1, respond with 'GREETING'.
+        If it falls under categories 2, 3, 4 or 7 respond with 'RELEVANT'.
         If it falls under category 5, respond with 'INAPPROPRIATE'.
         If it falls under category 6, respond with 'NOT RELEVANT'.
 
@@ -242,7 +244,7 @@ def chat():
 
         Current Question: {user_query}
         
-        Response (RELEVANT, INAPPROPRIATE, or NOT RELEVANT):
+        Response (GREETING, RELEVANT, INAPPROPRIATE, or NOT RELEVANT):
         """
         
         relevance_response = llm.predict(relevance_check_prompt)
@@ -273,6 +275,7 @@ def chat():
                 'video_links': {}
             })
 
+        # If we reach here, the query is relevant and not a greeting
         retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 3})
         
         prompt = ChatPromptTemplate.from_messages([
