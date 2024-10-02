@@ -24,7 +24,9 @@ app.options('*', (req, res) => {
   res.sendStatus(204);
 });
 
-
+app.get('/test-cors', (req, res) => {
+  res.json({ message: 'CORS is working' });
+});
 // Middleware
 app.use(bodyParser.json());
 
