@@ -65,6 +65,7 @@ export default function Section1() {
     e.preventDefault();
     try {
       // Send form data to the backend API
+      axios.defaults.withCredentials=true;
 const response = await axios.post('https://bents-model-backend.vercel.app/contact', formData, {
   withCredentials: true,
   headers: {
