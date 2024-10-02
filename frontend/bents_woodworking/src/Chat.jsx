@@ -3,6 +3,7 @@ import axios from 'axios';
 import { ArrowRight, PlusCircle, Menu, ChevronRight, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import YouTube from 'react-youtube';
+import { Button } from "@/components/ui/button"
 
 // Initial questions
 const initialQuestions = [
@@ -24,15 +25,12 @@ export default function Chat() {
   const [conversations, setConversations] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
   const [showInitialQuestions, setShowInitialQuestions] = useState(true);
-  const [showSidebar, setShowSidebar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingQuestionIndex, setLoadingQuestionIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const sidebarRef = useRef(null);
-  const hamburgerRef = useRef(null);
-  const latestConversationRef = useRef(null);
+
 
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
@@ -147,20 +145,6 @@ export default function Chat() {
     setShowInitialQuestions(true);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target) &&
-          hamburgerRef.current && !hamburgerRef.current.contains(event.target)) {
-        setShowSidebar(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   const renderVideo = (video, videoLinks) => {
     const videoId = getYoutubeVideoId(video);
     if (videoId) {
@@ -202,84 +186,90 @@ export default function Chat() {
     
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
-
-  return (
+  
+  const getSelectedIndexText = () => {
+    switch (selectedIndex) {
+      case "bents":
+        return "All";
+      case "shop-improvement":
+        return "Shop Improvement";
+      case "tool-recommendations":
+        return "Tool Recommendations";
+      default:
+        return "Select";
+    }
+  };
+return (
     <div className="flex flex-col h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white p-4 flex justify-between items-center border-b">
-        <div 
-          ref={hamburgerRef}
-          className="text-gray-500 hover:text-gray-700 cursor-pointer"
-          onClick={() => setShowSidebar(!showSidebar)}
-        >
-          <Menu size={24} />
-        </div>
-        <h1 className="text-xl font-bold">Woodworking Assistant</h1>
-        <div className="w-6"></div>
-      </header>
-
-      {/* Sidebar */}
-      {showSidebar && (
-        <div 
-          ref={sidebarRef}
-          className="fixed top-0 left-0 w-64 bg-white p-4 shadow-lg z-20 h-full mt-7"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Menu</h2>
-            <button onClick={() => setShowSidebar(false)} className="text-gray-500 hover:text-gray-700">
-              <X size={24} />
-            </button>
-          </div>
-          <button
-            onClick={handleNewConversation}
-            className="flex items-center justify-center bg-blue-500 text-white py-2 px-4 rounded-lg mb-4 hover:bg-blue-600 w-full"
-          >
-            <PlusCircle className="mr-2" size={20} />
-            New Conversation
-          </button>
-          <div className="mb-4">
-            <label htmlFor="index-select" className="block mb-2">Select Index:</label>
-            <select
-              id="index-select"
-              value={selectedIndex}
-              onChange={(e) => setSelectedIndex(e.target.value)}
-              className="w-full p-2 border rounded"
-            >
-              <option value="bents">All</option>
-              <option value="shop-improvement">Shop Improvement</option>
-              <option value="tool-recommendations">Tool Recommendations</option>
-            </select>
-          </div>
-          <div className="overflow-y-auto max-h-[calc(100vh-300px)]">
-            <h3 className="font-semibold mb-2">Search History</h3>
-            {searchHistory.map((query, index) => (
-              <div key={index} className="py-2 px-3 hover:bg-gray-100 cursor-pointer rounded">
-                {query}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Main content */}
       <div className="flex-grow overflow-y-auto">
-        {conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-4">
-            <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
-            
-            {/* Initial Search bar with increased height and grey background */}
-            <form onSubmit={handleSearch} className="w-full max-w-2xl mb-8">
-              <div className="relative">
+        <div className="flex flex-col items-center justify-between min-h-screen p-4">
+          {/* Top text */}
+          <h2 className="text-3xl font-bold mb-8 mt-4">A question creates knowledge</h2>
+          
+          {/* Centered content for initial conversation */}
+          <div className="flex-grow flex flex-col items-center justify-center w-full max-w-2xl">
+            {/* Search bar with index selector inside */}
+            <form onSubmit={handleSearch} className="w-full mb-8">
+              <div className="relative flex items-center">
+                <div className="absolute left-2 flex">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="mr-2"
+                    onClick={handleNewConversation}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                  <div className="relative">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Button>
+                    {isDropdownOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                        <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                          {[
+                            { value: "bents", label: "All" },
+                            { value: "shop-improvement", label: "Shop Improvement" },
+                            { value: "tool-recommendations", label: "Tool Recommendations" }
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => {
+                                setSelectedIndex(option.value);
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`block px-4 py-2 text-sm w-full text-left ${
+                                selectedIndex === option.value
+                                  ? "bg-blue-500 text-white"
+                                  : "text-gray-700 hover:bg-gray-100"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Ask anything..."
-                  className="w-full p-6 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                  className="w-full p-6 pl-28 pr-14 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
                 />
                 <button
                   type="submit"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  className="absolute right-2 text-gray-400"
                   disabled={isSearching || isLoading || !searchQuery.trim()}
                 >
                   {isSearching || isLoading ? (
@@ -291,9 +281,9 @@ export default function Chat() {
               </div>
             </form>
 
-            {/* Initial questions in equal boxes */}
+            {/* Initial questions */}
             {showInitialQuestions && (
-              <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {initialQuestions.map((question, index) => (
                   <button
                     key={index}
@@ -311,20 +301,21 @@ export default function Chat() {
               </div>
             )}
           </div>
-        ) : (
-          <div className="p-4">
-            {conversations.map((conv, index) => (
-              <div 
-                key={index} 
-                className="bg-white p-4 rounded-lg shadow mb-4"
-                ref={index === conversations.length - 1 ? latestConversationRef : null}
-              >
-                <h2 className="font-bold mb-4">{conv.question}</h2>
-                
-                {/* Related Products */}
-                <div className="mb-4">
-                  <h3 className="font-semibold mb-2">Related Products</h3>
-                  {conv.products && conv.products.length > 0 ? (
+
+          {/* Conversations */}
+          {conversations.length > 0 && (
+            <div className="w-full max-w-2xl mt-8">
+              {conversations.map((conv, index) => (
+                <div 
+                  key={index} 
+                  className="bg-white p-4 rounded-lg shadow mb-4"
+                  ref={index === conversations.length - 1 ? latestConversationRef : null}
+                >
+                  <h2 className="font-bold mb-4">{conv.question}</h2>
+                  
+                  {/* Related Products */}
+                  <div className="mb-4">
+                    <h3 className="font-semibold mb-2">Related Products</h3>
                     <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:gap-2">
                       {conv.products.map((product, pIndex) => (
                         <Link 
@@ -333,52 +324,101 @@ export default function Chat() {
                           className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
                         >
                           <span className="font-medium">{product.title}</span>
-                          <ChevronRight size={20} className="ml-2 text-gray-500" />
+                          <ChevronUp size={20} className="ml-2 text-gray-500" />
                         </Link>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-gray-500 italic">No related products available at the moment.</p>
-                  )}
-                </div>
+                  </div>
 
-                {/* Answer and Video */}
-                <div className="mb-4">
-                  {renderVideo(conv.video, conv.videoLinks)}
-                  {formatResponse(conv.text, conv.videoLinks)}
+                  {/* Answer and Video */}
+                  <div className="mb-4">
+                    {renderVideo(conv.video, conv.videoLinks)}
+                    {formatResponse(conv.text, conv.videoLinks)}
+                  </div>
+                  <div className="clear-both"></div>
                 </div>
-                <div className="clear-both"></div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Search Bar for non-empty conversations */}
       {conversations.length > 0 && (
         <div className="p-4 bg-gray-100">
           <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Ask a question..."
-              className="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
-            />
-            <button
+            <div className="flex mr-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="mr-2"
+                onClick={handleNewConversation}
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+              <div className="relative">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+                {isDropdownOpen && (
+                  <div className="absolute bottom-full left-0 mb-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                      {[
+                        { value: "bents", label: "All" },
+                        { value: "shop-improvement", label: "Shop Improvement" },
+                        { value: "tool-recommendations", label: "Tool Recommendations" }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            setSelectedIndex(option.value);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`block px-4 py-2 text-sm w-full text-left ${
+                            selectedIndex === option.value
+                              ? "bg-blue-500 text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="relative flex-grow">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Ask a question..."
+                className="w-full p-2 pl-4 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+              />
+            </div>
+            <Button
               type="submit"
-              className="bg-blue-500 text-white p-2 rounded-r-lg hover:bg-blue-600"
+              size="icon"
+              className="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 ml-2"
               disabled={isSearching || isLoading || !searchQuery.trim()}
             >
               {isSearching || isLoading ? (
                 <span className="animate-spin">⌛</span>
               ) : (
-                <Search size={20} />
+                <Send className="h-4 w-4" />
               )}
-            </button>
+            </Button>
           </form>
         </div>
       )}
     </div>
-  );
+  )
 }
