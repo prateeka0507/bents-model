@@ -7,7 +7,6 @@ import Chat from './Chat';
 import Shop from './Shop';
 function App() {
   const location = useLocation();
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
