@@ -69,6 +69,7 @@ export default function Section1() {
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
+    'Origin': 'https://bents-model-frontend.vercel.app'
   }
 });   alert(response.data.message);
       setFormData({ name: '', email: '', subject: '', message: '' });
