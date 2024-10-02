@@ -65,13 +65,12 @@ export default function Section1() {
     e.preventDefault();
     try {
       // Send form data to the backend API
- const response = await axios.post('https://bents-model-backend.vercel.app/contact', formData, {
+const response = await axios.post('https://bents-model-backend.vercel.app/contact', formData, {
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
-    'Origin': 'https://bents-model-frontend.vercel.app'
+    'Content-Type': 'application/json'
   }
-});   alert(response.data.message);
+});  alert(response.data.message);
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
       console.log(error);
