@@ -11,7 +11,7 @@ const port = 5002;
 
 
 const corsOptions = {
-  origin: ['https://bents-model-frontend.vercel.app', '*'], 
+  origin: ['https://bents-model-frontend.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -33,19 +33,7 @@ app.use(bodyParser.json());
 
 // Connect to the database
 // Uncomment the next line when you're ready to connect to the database
-
-
-try {
-  await mongoose.connect('mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0');
-  console.log('Connected successfully to MongoDB');
-} catch (error) {
-  console.error('Error connecting to MongoDB:', error);
-}
-
-
-
-
-
+mongoose.connect('mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0')
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
