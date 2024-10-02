@@ -5,7 +5,8 @@ import Section1 from './Section1';
 import Footer from './Footer';
 import Chat from './Chat';
 import Shop from './Shop';
-
+import mixpanel from 'mixpanel-browser';
+mixpanel.init('5d44cba1eaa2ff0838da6f3526e38324', {debug: true});
 function App() {
   const location = useLocation();
 
