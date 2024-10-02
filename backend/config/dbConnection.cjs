@@ -1,13 +1,12 @@
 const mongoose = require("mongoose");
 require('dotenv').config(); // Load environment variables from .env
 
-// Correct the connection string
-const CONNECTION_STRING = MONGO_DRIVER;
+// Get the connection string from the environment variable
+const CONNECTION_STRING = process.env.MONGO_DRIVER;
 
 const connectDb = async () => {
   try {
-    const connect = await mongoose.connect(CONNECTION_STRING); // No need for deprecated options
-
+    const connect = await mongoose.connect(CONNECTION_STRING);
     console.log(
       `Database connected: ${connect.connection.host} (DB: ${connect.connection.name})`
     );
