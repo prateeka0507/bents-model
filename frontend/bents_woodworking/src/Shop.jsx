@@ -38,7 +38,6 @@ export default function Shop() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-
   useEffect(() => {
     const fetchProducts = async (retryCount = 0) => {
       try {
