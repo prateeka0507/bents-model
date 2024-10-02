@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 require('dotenv').config(); // Load environment variables from .env
 
 // Correct the connection string
-const CONNECTION_STRING = "mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0";
+const CONNECTION_STRING = MONGO_DRIVER;
 
 const connectDb = async () => {
   try {
