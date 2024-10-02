@@ -2,15 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const  connectDb  = require('./config/dbConnection.cjs');
+//const  connectDb  = require('./config/dbConnection.cjs');
 const Contact = require('./contact.cjs'); // Mongoose model
 const User = require('./userModel.cjs');
+const mongoose=require('mongoose')
 const app = express();
 const port = 5002;
 
 
 const corsOptions = {
-  origin: 'https://bents-model-frontend.vercel.app',
+  origin: ['https://bents-model-frontend.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -32,7 +33,7 @@ app.use(bodyParser.json());
 
 // Connect to the database
 // Uncomment the next line when you're ready to connect to the database
-connectDb();
+mongoose.connect('mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0')
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
