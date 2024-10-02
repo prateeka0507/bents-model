@@ -56,7 +56,7 @@ export default function Section1() {
     subject: '',
     message: ''
   });
-
+  axios.defaults.withCredentials=true;
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -65,7 +65,7 @@ export default function Section1() {
     e.preventDefault();
     try {
       // Send form data to the backend API
-      axios.defaults.withCredentials=true;
+      
 const response = await axios.post('https://bents-model-backend.vercel.app/contact', formData, {
   withCredentials: true,
   headers: {
