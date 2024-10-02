@@ -10,7 +10,7 @@ const port = 5002;
 
 
 const corsOptions = {
-  origin: ['https://bents-model-frontend.vercel.app', 'http://localhost:3000'], // Add your local development URL if needed
+  origin: 'https://bents-model-frontend.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -20,8 +20,9 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+app.options('*', (req, res) => {
+  res.sendStatus(204);
+});
 
 
 // Middleware
