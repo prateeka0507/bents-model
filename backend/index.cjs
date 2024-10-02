@@ -20,6 +20,10 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+
 // Middleware
 app.use(bodyParser.json());
 
@@ -68,7 +72,6 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-// Route to handle contact form submission
 app.post('/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
   try {
@@ -91,6 +94,7 @@ app.post('/contact', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while processing your request.', error: err.message });
   }
 });
+
 
 
 app.post('/chat', async (req, res) => {
