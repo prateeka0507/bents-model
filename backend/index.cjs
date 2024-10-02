@@ -11,7 +11,7 @@ const port = 5002;
 
 
 const corsOptions = {
-  origin: ['www.bentsassistant.com'],
+  origin: ["https://www.bentsassistant.com/","https://bentsassistant.com"],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
