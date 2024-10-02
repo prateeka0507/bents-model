@@ -1,11 +1,9 @@
-'use client'
-
-import React, { useState, useRef, useEffect } from 'react'
-import axios from 'axios'
-import { ArrowRight, PlusCircle, Search, Send, HelpCircle, ChevronUp } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import YouTube from 'react-youtube'
-import { Button } from "@/components/ui/button"
+import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+import { ArrowRight, PlusCircle, Search, Send, HelpCircle, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import YouTube from 'react-youtube';
+import { Button } from "@/components/ui/button";
 
 // Initial questions
 const initialQuestions = [
@@ -29,11 +27,12 @@ export default function Chat() {
   const [showInitialQuestions, setShowInitialQuestions] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingQuestionIndex, setLoadingQuestionIndex] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const latestConversationRef = useRef(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState("bents");
+
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
 
@@ -110,11 +109,10 @@ export default function Chat() {
     }
     
     try {
-      // Simulating a longer load time (e.g., 3 seconds)
-       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
-        chat_history: conversations.flatMap(conv => [conv.question, conv.text])
+        chat_history: conversations.flatMap(conv => [conv.question, conv.initial_answer || conv.text])
       }, {
         timeout: 30000 // 30 seconds timeout
       });
@@ -122,6 +120,7 @@ export default function Chat() {
       const newConversation = {
         question: query,
         text: response.data.response,
+        initial_answer: response.data.initial_answer,
         video: response.data.url,
         products: response.data.related_products,
         videoLinks: response.data.video_links
@@ -163,21 +162,6 @@ export default function Chat() {
           />
         </div>
       );
-    } else if (videoLinks && Object.keys(videoLinks).length > 0) {
-      return (
-        <div className="mb-4">
-          <h3 className="font-semibold mb-2">Related Video Links:</h3>
-          <ul>
-            {Object.entries(videoLinks).map(([key, link], index) => (
-              <li key={index}>
-                <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                  {key}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      );
     }
     return null;
   };
@@ -201,19 +185,6 @@ export default function Chat() {
     formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
     
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-  };
-
-  const getSelectedIndexText = () => {
-    switch (selectedIndex) {
-      case "bents":
-        return "All";
-      case "shop-improvement":
-        return "Shop Improvement";
-      case "tool-recommendations":
-        return "Tool Recommendations";
-      default:
-        return "Select";
-    }
   };
 
   return (
@@ -333,18 +304,22 @@ export default function Chat() {
                   {/* Related Products */}
                   <div className="mb-4">
                     <h3 className="font-semibold mb-2">Related Products</h3>
-                    <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:gap-2">
-                      {conv.products.map((product, pIndex) => (
-                        <Link 
-                          key={pIndex} 
-                          to={product.link} 
-                          className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
-                        >
-                          <span className="font-medium">{product.title}</span>
-                          <ChevronUp size={20} className="ml-2 text-gray-500" />
-                        </Link>
-                      ))}
-                    </div>
+                    {conv.products && conv.products.length > 0 ? (
+                      <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:gap-2">
+                        {conv.products.map((product, pIndex) => (
+                          <Link 
+                            key={pIndex} 
+                            to={product.link} 
+                            className="flex-shrink-0 bg-gray-100 rounded-lg p-2 flex items-center justify-between mr-2 sm:mr-0 sm:w-auto min-w-[200px] sm:min-w-0"
+                          >
+                            <span className="font-medium">{product.title}</span>
+                            <ChevronRight size={20} className="ml-2 text-gray-500" />
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">No related products available at the moment.</p>
+                    )}
                   </div>
 
                   {/* Answer and Video */}
@@ -437,5 +412,5 @@ export default function Chat() {
         </div>
       )}
     </div>
-  )
+  );
 }
