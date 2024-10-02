@@ -38,6 +38,14 @@ export default function Shop() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const location = useLocation();
+
+  useEffect(() => {
+    mixpanel.track('Page View', {
+      'page': location.pathname
+    });
+  }, [location]);
+
   useEffect(() => {
     const fetchProducts = async (retryCount = 0) => {
       try {
