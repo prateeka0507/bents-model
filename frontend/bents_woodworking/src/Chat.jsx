@@ -1,8 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
-import { ArrowRight, PlusCircle, Menu, ChevronRight, Search, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import YouTube from 'react-youtube';
+'use client'
+
+import React, { useState, useRef, useEffect } from 'react'
+import axios from 'axios'
+import { ArrowRight, PlusCircle, Search, Send, HelpCircle, ChevronUp } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import YouTube from 'react-youtube'
 import { Button } from "@/components/ui/button"
 
 // Initial questions
@@ -27,11 +29,11 @@ export default function Chat() {
   const [showInitialQuestions, setShowInitialQuestions] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingQuestionIndex, setLoadingQuestionIndex] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-
-
+  const latestConversationRef = useRef(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState("bents");
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
 
@@ -108,11 +110,11 @@ export default function Chat() {
     }
     
     try {
-      // Simulating a longer load time (e.g., 30 seconds)
-      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+      // Simulating a longer load time (e.g., 3 seconds)
+       const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
         message: query,
         selected_index: selectedIndex,
-        chat_history: conversations.flatMap(conv => [conv.question, conv.initial_answer || conv.text])
+        chat_history: conversations.flatMap(conv => [conv.question, conv.text])
       }, {
         timeout: 30000 // 30 seconds timeout
       });
@@ -120,7 +122,6 @@ export default function Chat() {
       const newConversation = {
         question: query,
         text: response.data.response,
-        initial_answer: response.data.initial_answer,
         video: response.data.url,
         products: response.data.related_products,
         videoLinks: response.data.video_links
@@ -162,6 +163,21 @@ export default function Chat() {
           />
         </div>
       );
+    } else if (videoLinks && Object.keys(videoLinks).length > 0) {
+      return (
+        <div className="mb-4">
+          <h3 className="font-semibold mb-2">Related Video Links:</h3>
+          <ul>
+            {Object.entries(videoLinks).map(([key, link], index) => (
+              <li key={index}>
+                <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                  {key}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
     }
     return null;
   };
@@ -186,7 +202,7 @@ export default function Chat() {
     
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
-  
+
   const getSelectedIndexText = () => {
     switch (selectedIndex) {
       case "bents":
@@ -199,7 +215,8 @@ export default function Chat() {
         return "Select";
     }
   };
-return (
+
+  return (
     <div className="flex flex-col h-screen bg-white">
       {/* Main content */}
       <div className="flex-grow overflow-y-auto">
