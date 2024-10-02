@@ -34,13 +34,6 @@ export default function Chat() {
   const hamburgerRef = useRef(null);
   const latestConversationRef = useRef(null);
 
-  const location = useLocation();
-
-  useEffect(() => {
-    mixpanel.track('Page View', {
-      'page': location.pathname
-    });
-  }, [location]);
 
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
