@@ -178,21 +178,6 @@ export default function Chat() {
           />
         </div>
       );
-    } else if (videoLinks && Object.keys(videoLinks).length > 0) {
-      return (
-        <div className="mb-4">
-          <h3 className="font-semibold mb-2">Related Video Links:</h3>
-          <ul>
-            {Object.entries(videoLinks).map(([key, link], index) => (
-              <li key={index}>
-                <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                  {key}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      );
     }
     return null;
   };
