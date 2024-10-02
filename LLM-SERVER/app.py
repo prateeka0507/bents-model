@@ -22,7 +22,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": [
     "https://bents-model-backend.vercel.app",
-    "www.bentsassistant.com"
+    "https://www.bentsassistant.com/",
+    "https://bentsassistant.com"
 ]}})
 
 
