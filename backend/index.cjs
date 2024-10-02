@@ -33,7 +33,19 @@ app.use(bodyParser.json());
 
 // Connect to the database
 // Uncomment the next line when you're ready to connect to the database
-mongoose.connect('mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0')
+
+
+try {
+  await mongoose.connect('mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0');
+  console.log('Connected successfully to MongoDB');
+} catch (error) {
+  console.error('Error connecting to MongoDB:', error);
+}
+
+
+
+
+
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
