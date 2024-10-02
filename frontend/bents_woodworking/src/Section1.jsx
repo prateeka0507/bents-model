@@ -57,14 +57,6 @@ export default function Section1() {
     message: ''
   });
 
-  const location = useLocation();
-
-  useEffect(() => {
-    mixpanel.track('Page View', {
-      'page': location.pathname
-    });
-  }, [location]);
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
