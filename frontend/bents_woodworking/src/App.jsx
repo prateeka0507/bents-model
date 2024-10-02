@@ -5,8 +5,11 @@ import Section1 from './Section1';
 import Footer from './Footer';
 import Chat from './Chat';
 import Shop from './Shop';
-function App() {
+
+export default function App() {
   const location = useLocation();
+
+  const showFooter = location.pathname !== '/chat';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -18,9 +21,7 @@ function App() {
           <Route path="/shop" element={<Shop />} />
         </Routes>
       </main>
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 }
-
-export default App;
