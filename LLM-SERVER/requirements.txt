@@ -8,4 +8,5 @@ langchain
 pinecone-client
 langsmith
 flask-cors
+psycopg2-binary
 
