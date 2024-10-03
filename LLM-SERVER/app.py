@@ -278,7 +278,7 @@ def chat():
             })
 
         # If we reach here, the query is relevant and not a greeting
-        retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 3})
+        retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 5})
         
         prompt = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(SYSTEM_INSTRUCTIONS),
