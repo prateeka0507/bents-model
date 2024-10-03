@@ -12,8 +12,12 @@ function ProductCard({ product }) {
   return (
     <Card className="flex flex-col h-full">
       <CardContent className="p-0 flex-grow flex flex-col">
-        <div className="w-full aspect-square">
-          <img src={imageUrl} alt={product.title} className="w-full h-full object-contain" />
+        <div className="w-full aspect-square relative">
+          <img 
+            src={imageUrl} 
+            alt={product.title} 
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         </div>
         <div className="p-4 flex-grow flex flex-col justify-between">
           <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
