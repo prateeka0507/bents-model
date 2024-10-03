@@ -114,7 +114,7 @@ export default function Chat() {
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.initial_answer || conv.text])
       }, {
-        timeout: 30000 // 30 seconds timeout
+        timeout: 60000 // 30 seconds timeout
       });
       
       const newConversation = {
