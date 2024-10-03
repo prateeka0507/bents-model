@@ -5,32 +5,25 @@ import { Card, CardContent, CardFooter } from './components/ui/card.jsx'
 import { Loader2, ExternalLink } from 'lucide-react'
 
 function ProductCard({ product }) {
+  const imageUrl = product.image_data 
+    ? `data:image/jpeg;base64,${product.image_data}`
+    : '/path/to/default/image.jpg';
+
   return (
-    <Card className="w-full flex flex-col h-full">
-      <CardContent className="p-4 flex-grow flex flex-col">
-        <div className="flex flex-col items-center mb-4">
-          <div className="w-full h-48 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden mb-4">
-            <img
-              src={product.image || '/path/to/placeholder-image.jpg'}
-              alt={product.title}
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-          <h3 className="font-semibold text-lg text-center mb-2">{product.title}</h3>
+    <Card className="flex flex-col h-full">
+      <CardContent className="p-0 flex-grow flex flex-col">
+        <div className="w-full aspect-square">
+          <img src={imageUrl} alt={product.title} className="w-full h-full object-contain" />
+        </div>
+        <div className="p-4 flex-grow flex flex-col justify-between">
+          <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
+          <a href={product.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline mt-2">
+            View Product
+          </a>
         </div>
       </CardContent>
-      <CardFooter className="mt-auto flex justify-center p-4">
-        <a
-          href={product.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center text-blue-500 hover:text-blue-600 text-sm font-medium"
-        >
-          View Product <ExternalLink size={12} className="ml-1" />
-        </a>
-      </CardFooter>
     </Card>
-  )
+  );
 }
 
 export default function Shop() {
@@ -39,36 +32,22 @@ export default function Shop() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    const fetchProducts = async (retryCount = 0) => {
+    const fetchProducts = async () => {
       try {
         // Delay the fetch by 10 seconds
 
-        const response = await axios.get('https://bents-model-backend.vercel.app/documents', {
-          timeout: 600000 // 60 seconds timeout
-        })
-        const formattedProducts = response.data.map(product => ({
-          id: product[0],
-          title: product[1],
-          tags: product[2],
-          link: product[3],
-          image: product[4],
-        }))
-        setProducts(formattedProducts)
-        setLoading(false)
-      } catch (err) {
-        console.error('Error fetching products:', err)
-        if (retryCount < 3) {
-          console.log(`Retrying... Attempt ${retryCount + 1}`)
-          setTimeout(() => fetchProducts(retryCount + 1), 5000) // Retry after 5 seconds
-        } else {
-          setError('Failed to fetch products. Please try again later.')
-          setLoading(false)
-        }
+        const response = await axios.get('https://bents-model-backend.vercel.app/api/products');
+        setProducts(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setError('Failed to fetch products. Please try again later.');
+        setLoading(false);
       }
-    }
+    };
 
-    fetchProducts()
-  }, [])
+    fetchProducts();
+  }, []);
 
   if (error) {
     return (
