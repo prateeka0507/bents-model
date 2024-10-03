@@ -1,19 +1,18 @@
-const mongoose = require("mongoose");
-require('dotenv').config(); // Load environment variables from .env
+const { createPool } = require('@vercel/postgres');
+require('dotenv').config();
 
-// Get the connection string from the environment variable
-const CONNECTION_STRING = process.env.MONGO_DRIVER;
+const pool = createPool({
+  connectionString: process.env.POSTGRES_URL,
+})
 
 const connectDb = async () => {
   try {
-    const connect = await mongoose.connect(CONNECTION_STRING);
-    console.log(
-      `Database connected: ${connect.connection.host} (DB: ${connect.connection.name})`
-    );
+    await pool.connect();
+    console.log('Connected to Vercel Postgres');
   } catch (err) {
-    console.error("Error connecting to database:", err.message);
-    process.exit(1); // Exit the process with failure
+    console.error('Error connecting to Vercel Postgres:', err.message);
+    process.exit(1);
   }
 };
 
-module.exports = connectDb;
+module.exports = { connectDb, pool };
