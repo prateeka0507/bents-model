@@ -15,6 +15,9 @@ from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, H
 from pinecone import Pinecone, ServerlessSpec
 import langsmith
 from flask_cors import CORS
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import base64
 
 load_dotenv()
 
@@ -37,6 +40,38 @@ os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_PROJECT"] = "jason-json"
+
+# Video title list
+VIDEO_TITLE_LIST = [
+    "5 Modifications I Made In My Garage Shop - New Shop Part 5",
+    "2020 Shop Tour",
+    "American Green Lights",
+    "Assembly Table and Miter Saw Station",
+    "Complete Mr Cool Install",
+    "Every track saw owner could use this",
+    "How To Install Mr Cool DIY Series",
+    "I Built a Wall in my Garage",
+    "Moving A Woodworking Shop - New Shop Part 2",
+    "My shop is soundproof",
+    "People Told Me My Garage Door Would Explode",
+    "The biggest advancement in dust collection",
+    "Using SketchUp To Design Woodworking Shop - New Shop Part 1",
+    "8 Tools I Regret Not Buying Sooner",
+    "10 Tools Every Woodworker Should Own",
+    "10 woodworking tools I regret not buying sooner",
+    "10 Woodworking tools you will not regret",
+    "11 woodworking tools you need to own",
+    "12 Tools I will Never REGRET Buying",
+    "15 cabinet tools I do not regret",
+    "15 Woodworking Tools You Will not Regret",
+    "25 tools I regret not buying sooner",
+    "Every track saw owner could use this",
+    "FINALLY! The sprayer I have been waiting for",
+    "I would not buy these with your money",
+    "Stop wasting your money on the wrong ones",
+    "The 5 TSO tools you cannot live without",
+    "Track Saw Square Comparison TSO ProductsBench Dogs UKWoodpeckers ToolsInsta Rail Square"
+]
 
 # Initialize Langchain components
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
@@ -83,50 +118,60 @@ Then show that is in generated response with the provided context.
 
 logging.basicConfig(level=logging.DEBUG)
 
-def add_product(title, tags, link):
-    product_id = str(uuid.uuid4())
-    tags_text = ', '.join(tags) if isinstance(tags, list) else tags
-    
-    metadata = {
-        "title": title,
-        "tags": tags_text,
-        "link": link
-    }
-    
-    product_vector_store.add_texts([tags_text], metadatas=[metadata], ids=[product_id])
-    return product_id
-
-def get_all_products():
-    print("Starting get_all_products()")
+def get_matched_products(video_title):
+    logging.debug(f"Attempting to get matched products for title: {video_title}")
     try:
-        index = pc.Index(PRODUCT_INDEX_NAME)
-        vector_dim = index.describe_index_stats()['dimension']
-        zero_vector = [0.0] * vector_dim
-        results = index.query(vector=zero_vector, top_k=10000, include_metadata=True)
-        print(f"Retrieved {len(results['matches'])} results from Pinecone")
-        products = []
-        for i, match in enumerate(results['matches']):
-            print(f"Processing match {i+1}:")
-            print(f"  ID: {match['id']}")
-            print(f"  Metadata: {match['metadata']}")
-            metadata = match['metadata']
-            image_data = metadata.get('image_data', '')
-            image_url = ''
-            if image_data:
-                image_url = f"data:image/jpeg;base64,{image_data}"
-            product = [
-                str(match['id']),
-                str(metadata.get('title', 'No Title')),
-                str(metadata.get('tags', 'No Tags')),
-                str(metadata.get('link', 'No Link')),
-                image_url
-            ]
-            products.append(product)
-        print(f"Final products list: {products}")
-        return products
+        conn = psycopg2.connect(os.getenv("POSTGRES_URL"))
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Query for partial matches in the title, case-insensitive
+            query = """
+                SELECT * FROM products 
+                WHERE LOWER(tags) LIKE LOWER(%s)
+            """
+            search_term = f"%{video_title}%"
+            logging.debug(f"Executing SQL query: {query} with search term: {search_term}")
+            cur.execute(query, (search_term,))
+            matched_products = cur.fetchall()
+            logging.debug(f"Raw matched products from database: {matched_products}")
+        conn.close()
+
+        # Process the results
+        related_products = [
+            {
+                'id': product['id'],
+                'title': product['title'],
+                'tags': product['tags'].split(',') if product['tags'] else [],
+                'link': product['link'],
+                'image_data': product['image_data'] if 'image_data' in product else None
+            } for product in matched_products
+        ]
+
+        logging.debug(f"Processed related products: {related_products}")
+        return related_products
+
     except Exception as e:
-        print(f"Error in get_all_products: {str(e)}")
-        raise
+        logging.error(f"Error in get_matched_products: {str(e)}", exc_info=True)
+        return []
+
+
+
+# Add a function to verify database connection and content
+def verify_database():
+    try:
+        conn = psycopg2.connect(os.getenv("POSTGRES_URL"))
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT COUNT(*) FROM products")
+            count = cur.fetchone()['count']
+            logging.info(f"Total products in database: {count}")
+            
+            cur.execute("SELECT title FROM products LIMIT 5")
+            sample_titles = [row['title'] for row in cur.fetchall()]
+            logging.info(f"Sample product titles: {sample_titles}")
+        conn.close()
+        return True
+    except Exception as e:
+        logging.error(f"Database verification failed: {str(e)}", exc_info=True)
+        return False
 
 def process_answer(answer, url):
     def replace_timestamp(match):
@@ -159,13 +204,6 @@ def combine_url_and_timestamp(base_url, timestamp):
         return f"{base_url}&t={total_seconds}"
     else:
         return f"{base_url}?t={total_seconds}"
-
-def delete_product(product_id):
-    product_vector_store.delete([product_id])
-
-def update_product(product_id, title, tags, link):
-    delete_product(product_id)
-    add_product(title, tags, link)
 
 def extract_text_from_docx(file):
     doc = Document(file)
@@ -278,7 +316,7 @@ def chat():
             })
 
         # If we reach here, the query is relevant and not a greeting
-        retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 5})
+        retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 3})
         
         prompt = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(SYSTEM_INSTRUCTIONS),
@@ -307,94 +345,36 @@ def chat():
             url = metadata.get('url', None)
 
         logging.debug(f"Extracted video title from chunk metadata: {video_title}")
-
-        # List of video titles
-        video_title_list = [
-            "5 Modifications I Made In My Garage Shop - New Shop Part 5",
-            "2020 Shop Tour",
-            "American Green Lights",
-            "Assembly Table and Miter Saw Station",
-            "Complete Mr Cool Install",
-            "Every track saw owner could use this",
-            "How To Install Mr Cool DIY Series",
-            "I Built a Wall in my Garage",
-            "Moving A Woodworking Shop - New Shop Part 2",
-            "My shop is soundproof",
-            "People Told Me My Garage Door Would Explode",
-            "The biggest advancement in dust collection",
-            "Using SketchUp To Design Woodworking Shop - New Shop Part 1",
-            "8 Tools I Regret Not Buying Sooner",
-            "10 Tools Every Woodworker Should Own",
-            "10 woodworking tools I regret not buying sooner",
-            "10 Woodworking tools you will not regret",
-            "11 woodworking tools you need to own",
-            "12 Tools I will Never REGRET Buying",
-            "15 cabinet tools I do not regret",
-            "15 Woodworking Tools You Will not Regret",
-            "25 tools I regret not buying sooner",
-            "Every track saw owner could use this",
-            "FINALLY! The sprayer I have been waiting for",
-            "I would not buy these with your money",
-            "Stop wasting your money on the wrong ones",
-            "The 5 TSO tools you cannot live without",
-            "Track Saw Square Comparison TSO ProductsBench Dogs UKWoodpeckers ToolsInsta Rail Square"
-        ]
+        # In your chat function, add this logging:
+        logging.debug(f"Video title before get_matched_products: {video_title}")
+        related_products = get_matched_products(video_title)
+        logging.debug(f"Retrieved matched products: {related_products}")
 
         # Process the answer to replace timestamps and extract video links
         processed_answer, video_dict = process_answer(initial_answer, url)
         
         logging.debug(f"Processed answer: {processed_answer}")
         
-        related_products = []
-        
-        # Check if the video title is in the list
-        if video_title in video_title_list:
-            try:
-                product_index = pc.Index(PRODUCT_INDEX_NAME)
-                logging.debug(f"Querying product index: {PRODUCT_INDEX_NAME}")
-                
-                product_results = product_index.query(
-                    vector=embeddings.embed_query(video_title),
-                    top_k=15,
-                    include_metadata=True
-                )
-                logging.debug(f"Product search results: {product_results}")
-                
-                for match in product_results['matches']:
-                    try:
-                        product = {
-                            'id': match['id'],
-                            'title': match['metadata'].get('title', 'Untitled'),
-                            'tags': match['metadata'].get('tags', ''),
-                            'link': match['metadata'].get('link', ''),
-                            'score': match['score']
-                        }
-                        related_products.append(product)
-                        logging.debug(f"Retrieved product: {product}")
-                    except Exception as e:
-                        logging.error(f"Error processing product match: {str(e)}")
-                        logging.debug(f"Problematic match data: {match}")
-            except Exception as e:
-                logging.error(f"Error querying product index: {str(e)}")
-        else:
-            logging.info(f"Video title '{video_title}' not found in the list. No products retrieved.")
+        # Get matched products based on video title
+        related_products = get_matched_products(video_title)
 
-        logging.debug(f"Final related products: {related_products}")
+        logging.debug(f"Retrieved matched products: {related_products}")
 
         response_data = {
-    'response': processed_answer,
-    'initial_answer': initial_answer,
-    'related_products': related_products,
-    'url': url,
-    'context': context,
-    'video_links': video_dict,
-    'video_title': video_title
-}
+            'response': processed_answer,
+            'initial_answer': initial_answer,
+            'related_products': related_products,
+            'url': url,
+            'context': context,
+            'video_links': video_dict,
+            'video_title': video_title
+        }
 
         return jsonify(response_data)
     except Exception as e:
         logging.error(f"Error in chat route: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred processing your request'}), 500
+
 @app.route('/upload_document', methods=['POST'])
 def upload_document():
     if 'file' not in request.files:
@@ -424,9 +404,11 @@ def upload_document():
 @app.route('/documents')
 def get_documents():
     try:
-        documents = get_all_products()
-        if not documents:
-            return jsonify([]), 200  # Return an empty array if no documents
+        conn = psycopg2.connect(os.getenv("POSTGRES_URL"))
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT * FROM products")
+            documents = cur.fetchall()
+        conn.close()
         return jsonify(documents)
     except Exception as e:
         print(f"Error in get_documents: {str(e)}")
@@ -435,20 +417,52 @@ def get_documents():
 @app.route('/add_document', methods=['POST'])
 def add_document():
     data = request.json
-    product_id = add_product(data['title'], data['tags'].split(','), data['link'])
-    return jsonify({'success': True, 'product_id': product_id})
+    try:
+        conn = psycopg2.connect(os.getenv("POSTGRES_URL"))
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                "INSERT INTO products (title, tags, link) VALUES (%s, %s, %s) RETURNING id",
+                (data['title'], ','.join(data['tags']), data['link'])
+            )
+            product_id = cur.fetchone()['id']
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'product_id': product_id})
+    except Exception as e:
+        print(f"Error in add_document: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/delete_document', methods=['POST'])
 def delete_document():
     data = request.json
-    delete_product(data['id'])
-    return jsonify({'success': True})
+    try:
+        conn = psycopg2.connect(os.getenv("POSTGRES_URL"))
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM products WHERE id = %s", (data['id'],))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error in delete_document: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/update_document', methods=['POST'])
 def update_document():
     data = request.json
-    update_product(data['id'], data['title'], data['tags'].split(','), data['link'])
-    return jsonify({'success': True})
+    try:
+        conn = psycopg2.connect(os.getenv("POSTGRES_URL"))
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE products SET title = %s, tags = %s, link = %s WHERE id = %s",
+                (data['title'], ','.join(data['tags']), data['link'], data['id'])
+            )
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error in update_document: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
+    verify_database()
     app.run(debug=True, port=5000)
