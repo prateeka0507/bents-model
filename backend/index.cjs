@@ -2,10 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-//const  connectDb  = require('./config/dbConnection.cjs');
-const Contact = require('./contact.cjs'); // Mongoose model
-const User = require('./userModel.cjs');
-const mongoose=require('mongoose')
+const { connectDb, pool } = require('./config/dbConnection.cjs');
 const app = express();
 const port = 5002;
 
@@ -31,9 +28,6 @@ app.get('/test-cors', (req, res) => {
 // Middleware
 app.use(bodyParser.json());
 
-// Connect to the database
-// Uncomment the next line when you're ready to connect to the database
-mongoose.connect('mongodb+srv://mohamedrasheq:rasheq@cluster0.vsdcw.mongodb.net/bents-contact?retryWrites=true&w=majority&appName=Cluster0')
 
 // Flask backend URL
 const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
@@ -41,13 +35,14 @@ const FLASK_BACKEND_URL = 'https://bents-model-phi.vercel.app';
 // Get user data
 app.get('/api/user/:userId', async (req, res) => {
   try {
-    const user = await User.findOne({ userId: req.params.userId });
-    if (user) {
-      res.json(user);
+    const { rows } = await pool.query('SELECT * FROM users WHERE user_id = $1', [req.params.userId]);
+    if (rows.length > 0) {
+      res.json(rows[0]);
     } else {
       res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
+    console.error('Error fetching user data:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -56,50 +51,39 @@ app.get('/api/user/:userId', async (req, res) => {
 app.post('/api/user/:userId', async (req, res) => {
   try {
     const { conversations, searchHistory, selectedIndex } = req.body;
-    const user = await User.findOneAndUpdate(
-      { userId: req.params.userId },
-      { conversations, searchHistory, selectedIndex },
-      { new: true, upsert: true }
+    const { rows } = await pool.query(
+      'INSERT INTO users (user_id, conversations, search_history, selected_index) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET conversations = $2, search_history = $3, selected_index = $4 RETURNING *',
+      [req.params.userId, JSON.stringify(conversations), JSON.stringify(searchHistory), selectedIndex]
     );
-    res.json(user);
+    res.json(rows[0]);
   } catch (error) {
+    console.error('Error saving user data:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-
-
-
-
 
 app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
+// Route to handle contact form submission
 app.post('/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
   try {
     console.log('Received contact form submission:', { name, email, subject, message });
 
-    const newContact = new Contact({
-      name,
-      email,
-      subject,
-      message,
-    });
+    const { rows } = await pool.query(
+      'INSERT INTO contacts (name, email, subject, message) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, email, subject, message]
+    );
 
-    const savedContact = await newContact.save();
-    console.log('Contact saved successfully:', savedContact);
-
-    res.json({ message: 'Message received successfully!', data: savedContact });
+    console.log('Contact saved successfully:', rows[0]);
+    res.json({ message: 'Message received successfully!', data: rows[0] });
   } catch (err) {
     console.error('Error saving contact data:', err);
-    console.error('Error details:', err.message, err.stack);
     res.status(500).json({ message: 'An error occurred while processing your request.', error: err.message });
   }
 });
-
-
 
 app.post('/chat', async (req, res) => {
   try {
@@ -113,46 +97,98 @@ app.post('/chat', async (req, res) => {
 
 app.get('/documents', async (req, res) => {
   try {
-    const response = await axios.get(`${FLASK_BACKEND_URL}/documents`);
-    res.json(response.data);
+    const { rows } = await pool.query('SELECT * FROM products');
+    res.json(rows);
   } catch (error) {
-    console.error('Error fetching documents from Flask:', error);
+    console.error('Error fetching documents:', error);
     res.status(500).json({ message: 'An error occurred while fetching documents.' });
   }
 });
 
 app.post('/add_document', async (req, res) => {
   try {
-    const response = await axios.post(`${FLASK_BACKEND_URL}/add_document`, req.body);
-    res.json(response.data);
+    const { title, tags, link, image_url } = req.body;
+    const { rows } = await pool.query(
+      'INSERT INTO products (id, title, tags, link, image_url) VALUES (uuid_generate_v4(), $1, $2, $3, $4) RETURNING *',
+      [title, tags, link, image_url]
+    );
+    res.json(rows[0]);
   } catch (error) {
-    console.error('Error adding document through Flask:', error);
+    console.error('Error adding document:', error);
     res.status(500).json({ message: 'An error occurred while adding the document.' });
   }
 });
 
 app.post('/delete_document', async (req, res) => {
   try {
-    const response = await axios.post(`${FLASK_BACKEND_URL}/delete_document`, req.body);
-    res.json(response.data);
+    const { id } = req.body;
+    await pool.query('DELETE FROM products WHERE id = $1', [id]);
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error deleting document through Flask:', error);
+    console.error('Error deleting document:', error);
     res.status(500).json({ message: 'An error occurred while deleting the document.' });
   }
 });
 
 app.post('/update_document', async (req, res) => {
   try {
-    const response = await axios.post(`${FLASK_BACKEND_URL}/update_document`, req.body);
-    res.json(response.data);
+    const { id, title, tags, link } = req.body;
+    await pool.query(
+      'UPDATE products SET title = $2, tags = $3, link = $4 WHERE id = $1',
+      [id, title, tags, link]
+    );
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error updating document through Flask:', error);
+    console.error('Error updating document:', error);
     res.status(500).json({ message: 'An error occurred while updating the document.' });
   }
+});
+
+// Route to get all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM users');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to get all migrated data
+app.get('/api/migrated-data', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM pinecone_data');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching migrated data:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to fetch products
+app.get('/api/products', async (req, res) => {
+  try {
+    console.log('Attempting to fetch products...');
+    const { rows } = await pool.query('SELECT id, title, tags, link, image_data FROM products');
+    console.log('Products fetched:', rows);
+    const products = rows.map(product => ({
+      ...product,
+      image_data: product.image_data ? product.image_data.toString('base64') : null
+    }));
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Test route
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is working' });
 });
 
 // Start the server
 app.listen(port, () => {
   console.log(`Express server is running on http://localhost:${port}`);
-  console.log(connectDb());
 });
