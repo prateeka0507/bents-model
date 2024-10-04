@@ -72,6 +72,37 @@ VIDEO_TITLE_LIST = [
     "The 5 TSO tools you cannot live without",
     "Track Saw Square Comparison TSO ProductsBench Dogs UKWoodpeckers ToolsInsta Rail Square"
 ]
+class LLMResponseError(Exception):
+    pass
+
+class LLMResponseCutOff(LLMResponseError):
+    pass
+
+class LLMNoResponseError(LLMResponseError):
+    pass
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2), retry=retry_if_exception_type(LLMResponseError))
+def retry_llm_call(qa_chain, query, chat_history):
+    try:
+        result = qa_chain({"question": query, "chat_history": chat_history})
+        
+        # Check if the result is None or empty
+        if result is None or 'answer' not in result or not result['answer']:
+            raise LLMNoResponseError("LLM failed to generate a response")
+        
+        # Check if the response is incomplete or cut off
+        if result['answer'].endswith('...') or len(result['answer']) < 20:  # Adjust these conditions as needed
+            raise LLMResponseCutOff("LLM response appears to be cut off")
+        
+        return result
+    except Exception as e:
+        # If it's our custom exception, log and re-raise it
+        if isinstance(e, LLMResponseError):
+            logging.error(f"LLM call failed: {str(e)}")
+            raise
+        # If it's any other exception, log and raise an LLMNoResponseError
+        logging.error(f"Unexpected error in LLM call: {str(e)}")
+        raise LLMNoResponseError("LLM failed due to an unexpected error")
 
 # Initialize Langchain components
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
@@ -330,7 +361,17 @@ def chat():
             return_source_documents=True
         )
         
-        result = qa_chain({"question": user_query, "chat_history": formatted_history})
+        try:
+            result = retry_llm_call(qa_chain, user_query, formatted_history)
+        except LLMResponseError as e:
+            error_message = "Failed to get a complete response from the AI after multiple attempts."
+            if isinstance(e, LLMNoResponseError):
+                error_message = "The AI failed to generate a response after multiple attempts."
+            return jsonify({'error': error_message}), 500
+        except Exception as e:
+            logging.error(f"Unexpected error in LLM call: {str(e)}")
+            return jsonify({'error': 'An unexpected error occurred while processing your request.'}), 500
+        
         
         initial_answer = result['answer']
         context = [doc.page_content for doc in result['source_documents']]
