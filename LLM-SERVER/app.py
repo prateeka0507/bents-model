@@ -18,6 +18,17 @@ from flask_cors import CORS
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import base64
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+import time
+
+class LLMResponseError(Exception):
+    pass
+
+class LLMResponseCutOff(LLMResponseError):
+    pass
+
+class LLMNoResponseError(LLMResponseError):
+    pass
 
 load_dotenv()
 
@@ -330,8 +341,16 @@ def chat():
             return_source_documents=True
         )
         
-        result = qa_chain({"question": user_query, "chat_history": formatted_history})
-        
+        try:
+            result = retry_llm_call(qa_chain, user_query, formatted_history)
+        except LLMResponseError as e:
+            error_message = "Failed to get a complete response from the AI after multiple attempts."
+            if isinstance(e, LLMNoResponseError):
+                error_message = "The AI failed to generate a response after multiple attempts."
+            return jsonify({'error': error_message}), 500
+        except Exception as e:
+            logging.error(f"Unexpected error in LLM call: {str(e)}")
+            return jsonify({'error': 'An unexpected error occurred while processing your request.'}), 500
         
         initial_answer = result['answer']
         context = [doc.page_content for doc in result['source_documents']]
@@ -463,6 +482,25 @@ def update_document():
     except Exception as e:
         print(f"Error in update_document: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2), retry=retry_if_exception_type(LLMResponseError))
+def retry_llm_call(qa_chain, query, chat_history):
+    try:
+        result = qa_chain({"question": query, "chat_history": chat_history})
+        
+        if result is None or 'answer' not in result or not result['answer']:
+            raise LLMNoResponseError("LLM failed to generate a response")
+        
+        if result['answer'].endswith('...') or len(result['answer']) < 20:
+            raise LLMResponseCutOff("LLM response appears to be cut off")
+        
+        return result
+    except Exception as e:
+        if isinstance(e, LLMResponseError):
+            logging.error(f"LLM call failed: {str(e)}")
+            raise
+        logging.error(f"Unexpected error in LLM call: {str(e)}")
+        raise LLMNoResponseError("LLM failed due to an unexpected error")
 
 if __name__ == '__main__':
     verify_database()
