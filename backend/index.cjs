@@ -66,6 +66,8 @@ app.get("/", (req, res) => {
 });
 
 
+
+
 // Route to handle contact form submission
 app.post('/contact', async (req, res) => {
   const { name, email, subject, message } = req.body;
@@ -82,6 +84,11 @@ app.post('/contact', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while processing your request.', error: err.message });
   }
 });
+
+
+
+
+
 app.post('/chat', async (req, res) => {
   try {
     const response = await axios.post(`${FLASK_BACKEND_URL}/chat`, req.body);
