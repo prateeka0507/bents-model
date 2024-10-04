@@ -5,26 +5,38 @@ import { Card, CardContent, CardFooter } from './components/ui/card.jsx'
 import { Loader2, ExternalLink } from 'lucide-react'
 
 function ProductCard({ product }) {
-  const imageUrl = product.image_data 
+  const imageUrl = product.image_data
     ? `data:image/jpeg;base64,${product.image_data}`
     : '/path/to/default/image.jpg';
 
   return (
-    <Card className="flex flex-col h-full">
-      <CardContent className="p-0 flex-grow flex flex-col">
-        <div className="w-full aspect-square">
-          <img src={imageUrl} alt={product.title} className="w-full h-full object-contain" />
-        </div>
-        <div className="p-4 flex-grow flex flex-col justify-between">
-          <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
-          <a href={product.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline mt-2">
-            View Product
-          </a>
+    <Card className="w-full flex flex-col h-full">
+      <CardContent className="p-4 flex-grow flex flex-col">
+        <div className="flex flex-col items-center mb-4">
+          <div className="w-full h-48 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden mb-4">
+            <img
+              src={imageUrl}
+              alt={product.title}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+          <h3 className="font-semibold text-lg text-center mb-2">{product.title}</h3>
         </div>
       </CardContent>
+      <CardFooter className="mt-auto flex justify-center p-4">
+        <a
+          href={product.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center text-blue-500 hover:text-blue-600 text-sm font-medium"
+        >
+          View Product <ExternalLink size={12} className="ml-1" />
+        </a>
+      </CardFooter>
     </Card>
   );
 }
+
 
 export default function Shop() {
   const [products, setProducts] = useState([])
