@@ -151,17 +151,65 @@ export default function Chat() {
   );
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white overflow-y-auto">
       {/* Header */}
       <header className="bg-white p-4 flex justify-between items-center border-b sticky top-0 z-10">
         <h1 className="text-xl font-bold">Woodworking Assistant</h1>
       </header>
 
       {/* Main content */}
-      <div className="flex-grow overflow-y-auto p-4 pb-24">
+      <div className={`container mx-auto p-4 ${conversations.length > 0 ? 'pb-24' : ''}`}>
         {conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full">
+          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
+            
+            {/* Initial Search bar */}
+            <form onSubmit={handleSearchSubmit} className="w-full max-w-2xl mb-8">
+              <div className="relative flex items-center">
+                <div className="absolute left-2 flex">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="mr-2"
+                    onClick={handleNewConversation}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                  <div className="relative">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Button>
+                    {isDropdownOpen && renderDropdownMenu()}
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Ask anything..."
+                  className="w-full p-6 pl-28 pr-14 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  disabled={isSearching || isLoading || !searchQuery.trim()}
+                >
+                  {isSearching || isLoading ? (
+                    <span className="animate-spin">⌛</span>
+                  ) : (
+                    <ArrowRight size={24} />
+                  )}
+                </button>
+              </div>
+            </form>
+
             {/* Initial questions */}
             {showInitialQuestions && (
               <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -230,55 +278,57 @@ export default function Chat() {
         )}
       </div>
 
-      {/* Fixed search bar at the bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-        <form onSubmit={handleSearchSubmit} className="flex items-center w-full max-w-2xl mx-auto">
-          <div className="flex mr-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="mr-2"
-              onClick={handleNewConversation}
-            >
-              <PlusCircle className="h-4 w-4" />
-            </Button>
-            <div className="relative">
+      {/* Search Bar for non-empty conversations */}
+      {conversations.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-100">
+          <form onSubmit={handleSearchSubmit} className="flex items-center w-full max-w-2xl mx-auto">
+            <div className="flex mr-2">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
+                className="mr-2"
+                onClick={handleNewConversation}
               >
-                <HelpCircle className="h-4 w-4" />
+                <PlusCircle className="h-4 w-4" />
               </Button>
-              {isDropdownOpen && renderDropdownMenu()}
+              <div className="relative">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+                {isDropdownOpen && renderDropdownMenu()}
+              </div>
             </div>
-          </div>
-          <div className="relative flex-grow">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Ask a question..."
-              className="w-full p-2 pl-4 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            />
-          </div>
-          <Button
-            type="submit"
-            size="icon"
-            className="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 ml-2"
-            disabled={isSearching || isLoading || !searchQuery.trim()}
-          >
-            {isSearching || isLoading ? (
-              <span className="animate-spin">⌛</span>
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </form>
-      </div>
+            <div className="relative flex-grow">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Ask a question..."
+                className="w-full p-2 pl-4 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              />
+            </div>
+            <Button
+              type="submit"
+              size="icon"
+              className="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 ml-2"
+              disabled={isSearching || isLoading || !searchQuery.trim()}
+            >
+              {isSearching || isLoading ? (
+                <span className="animate-spin">⌛</span>
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
