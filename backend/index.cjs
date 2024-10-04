@@ -6,7 +6,6 @@ const { connectDb, pool } = require('./config/dbConnection.cjs');
 const app = express();
 const port = 5002;
 
-
 const corsOptions = {
   origin: ['https://www.bentsassistant.com','https://bents-model-backend.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
