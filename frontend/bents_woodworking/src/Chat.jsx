@@ -1,18 +1,18 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { ArrowRight, PlusCircle, HelpCircle, ChevronRight, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import YouTube from 'react-youtube';
-import { useChatContext } from './ChatContext';
+import axios from 'axios';
 import { Button } from "@/components/ui/button";
 
-// Initial questions
+const ChatContext = createContext();
+
 const initialQuestions = [
   "What are the 10 most recommended woodworking tools?",
   "Suggest me some shop layout tips?",
   "What are the benefits of LR32 system for cabinetry?",
 ];
 
-// Function to extract YouTube video ID from URL
 const getYoutubeVideoId = (url) => {
   if (!url) return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -21,30 +21,106 @@ const getYoutubeVideoId = (url) => {
 };
 
 export default function Chat() {
-  const {
-    searchQuery,
-    setSearchQuery,
-    conversations,
-    searchHistory,
-    showInitialQuestions,
-    selectedIndex,
-    setSelectedIndex,
-    isSearching,
-    pendingQuery,
-    handleSearch,
-    handleNewConversation
-  } = useChatContext();
-
+  const [searchQuery, setSearchQuery] = useState("");
+  const [conversations, setConversations] = useState([]);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showInitialQuestions, setShowInitialQuestions] = useState(true);
+  const [selectedIndex, setSelectedIndex] = useState("bents");
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [pendingQuery, setPendingQuery] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingQuestionIndex, setLoadingQuestionIndex] = useState(null);
-  const latestConversationRef = useRef(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  const latestConversationRef = useRef(null);
+  const userId = "user123"; // This should be dynamically set based on your authentication system
+
+  useEffect(() => {
+    const storedData = localStorage.getItem('chatData');
+    if (storedData) {
+      const parsedData = JSON.parse(storedData);
+      setConversations(parsedData.conversations || []);
+      setSearchHistory(parsedData.searchHistory || []);
+      setSelectedIndex(parsedData.selectedIndex || "bents");
+      setShowInitialQuestions(parsedData.conversations.length === 0);
+      setPendingQuery(parsedData.pendingQuery || null);
+      setIsInitialized(true);
+    } else {
+      fetchUserData();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem('chatData', JSON.stringify({
+        conversations,
+        searchHistory,
+        selectedIndex,
+        pendingQuery
+      }));
+    }
+  }, [conversations, searchHistory, selectedIndex, pendingQuery, isInitialized]);
 
   useEffect(() => {
     if (pendingQuery && !isSearching) {
       handleSearchSubmit(null, null, pendingQuery);
     }
   }, [pendingQuery, isSearching]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await axios.get(`https://bents-model-backend.vercel.app/api/user/${userId}`);
+      const userData = response.data;
+      if (userData) {
+        setConversations(userData.conversations || []);
+        setSearchHistory(userData.searchHistory || []);
+        setSelectedIndex(userData.selectedIndex || "bents");
+        setShowInitialQuestions(userData.conversations.length === 0);
+      }
+      setIsInitialized(true);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setIsInitialized(true);
+    }
+  };
+
+  const handleSearch = async (query) => {
+    if (!query.trim() || isSearching) return;
+    setIsSearching(true);
+    try {
+      const response = await axios.post('https://bents-model-backend.vercel.app/chat', {
+        message: query,
+        selected_index: selectedIndex,
+        chat_history: conversations.flatMap(conv => [conv.question, conv.text])
+      }, {
+        timeout: 30000 // 30 seconds timeout
+      });
+      const newConversation = {
+        question: query,
+        text: response.data.response,
+        videos: response.data.urls,
+        products: response.data.related_products,
+        videoLinks: response.data.video_links,
+        videoTitles: response.data.video_titles
+      };
+      setConversations(prevConversations => [...prevConversations, newConversation]);
+      setSearchHistory(prevHistory => [...prevHistory, query]);
+      setShowInitialQuestions(false);
+      setSearchQuery("");
+      setPendingQuery(null);
+    } catch (error) {
+      console.error("Error fetching response:", error);
+      setPendingQuery(query);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleNewConversation = () => {
+    setConversations([]);
+    setShowInitialQuestions(true);
+  };
 
   const scrollToLatestConversation = () => {
     if (latestConversationRef.current) {
@@ -147,18 +223,15 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen bg-white overflow-y-auto">
-      {/* Header */}
       <header className="bg-white p-4 flex justify-between items-center border-b sticky top-0 z-10">
         <h1 className="text-xl font-bold">Woodworking Assistant</h1>
       </header>
 
-      {/* Main content */}
       <div className={`container mx-auto p-4 ${conversations.length > 0 ? 'pb-24' : ''}`}>
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
-            {/* Initial Search bar */}
             <form onSubmit={handleSearchSubmit} className="w-full max-w-2xl mb-8">
               <div className="relative flex items-center">
                 <div className="absolute left-2 flex">
@@ -205,7 +278,6 @@ export default function Chat() {
               </div>
             </form>
 
-            {/* Initial questions */}
             {showInitialQuestions && (
               <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {initialQuestions.map((question, index) => (
@@ -235,7 +307,6 @@ export default function Chat() {
               >
                 <h2 className="font-bold mb-4">{conv.question}</h2>
                 
-                {/* Related Products */}
                 <div className="mb-4">
                   <h3 className="font-semibold mb-2">Related Products</h3>
                   {conv.products && conv.products.length > 0 ? (
@@ -256,7 +327,6 @@ export default function Chat() {
                   )}
                 </div>
 
-                {/* Answer and Videos */}
                 <div className="mb-4">
                   {renderVideos(conv.videoLinks)}
                   {formatResponse(conv.text, conv.videoLinks)}
@@ -271,9 +341,8 @@ export default function Chat() {
             )}
           </>
         )}
-      </div>
+</div>
 
-      {/* Search Bar for non-empty conversations */}
       {conversations.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-100">
           <form onSubmit={handleSearchSubmit} className="flex items-center w-full max-w-2xl mx-auto">
@@ -327,3 +396,7 @@ export default function Chat() {
     </div>
   );
 }
+
+// Export the Chat component as the default export
+export default Chat;      
+
