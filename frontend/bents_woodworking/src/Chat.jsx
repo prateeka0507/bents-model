@@ -114,7 +114,7 @@ export default function Chat() {
         selected_index: selectedIndex,
         chat_history: conversations.flatMap(conv => [conv.question, conv.initial_answer || conv.text])
       }, {
-        timeout: 60000 // 30 seconds timeout
+        timeout: 60000 // 60 seconds timeout
       });
       
       const newConversation = {
@@ -347,8 +347,7 @@ export default function Chat() {
                   </Button>
                   <div className="relative">
                     <Button
-                      type="button"
-                      variant="outline"
+                      type="button" variant="outline"
                       size="icon"
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
