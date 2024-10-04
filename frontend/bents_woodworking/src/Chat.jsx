@@ -72,36 +72,31 @@ export default function Chat() {
     }
   };
 
-  const renderVideos = (videos, videoTitles, videoLinks) => {
-    if (!videos || videos.length === 0) return null;
+  const renderVideos = (videoLinks) => {
+    if (!videoLinks || Object.keys(videoLinks).length === 0) return null;
+
+    const videoUrl = Object.values(videoLinks)[0]; // Get the first (and only) video URL
+    const videoId = getYoutubeVideoId(videoUrl);
 
     return (
       <div className="mb-4">
-        <h3 className="font-semibold mb-2">Related Videos:</h3>
-        {videos.map((video, index) => {
-          const videoId = getYoutubeVideoId(video);
-          return (
-            <div key={index} className="mb-4">
-              <h4 className="font-medium mb-1">{videoTitles[index]}</h4>
-              {videoId ? (
-                <YouTube
-                  videoId={videoId}
-                  opts={{
-                    height: '195',
-                    width: '320',
-                    playerVars: {
-                      autoplay: 0,
-                    },
-                  }}
-                />
-              ) : (
-                <a href={video} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                  Watch Video
-                </a>
-              )}
-            </div>
-          );
-        })}
+        <h3 className="font-semibold mb-2">Related Video:</h3>
+        {videoId ? (
+          <YouTube
+            videoId={videoId}
+            opts={{
+              height: '195',
+              width: '320',
+              playerVars: {
+                autoplay: 0,
+              },
+            }}
+          />
+        ) : (
+          <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+            Watch Video
+          </a>
+        )}
       </div>
     );
   };
@@ -263,7 +258,7 @@ export default function Chat() {
 
                 {/* Answer and Videos */}
                 <div className="mb-4">
-                  {renderVideos(conv.videos, conv.videoTitles, conv.videoLinks)}
+                  {renderVideos(conv.videoLinks)}
                   {formatResponse(conv.text, conv.videoLinks)}
                 </div>
               </div>
