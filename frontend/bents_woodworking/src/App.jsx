@@ -1,6 +1,5 @@
 import React from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
-import { ChatProvider } from './ChatContext';
 import Header from './Header';
 import Section1 from './Section1';
 import Footer from './Footer';
@@ -12,7 +11,7 @@ function App() {
   const showFooter = location.pathname !== '/chat';
 
   return (
-    <ChatProvider>
+    <>
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className={`flex-grow ${location.pathname !== '/' ? 'pt-[75px]' : ''}`}>
@@ -24,7 +23,7 @@ function App() {
         </main>
         {showFooter && <Footer />}
       </div>
-    </ChatProvider>
+    </>
   );
 }
 
