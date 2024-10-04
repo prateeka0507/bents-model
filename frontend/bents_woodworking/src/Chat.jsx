@@ -20,7 +20,7 @@ const getYoutubeVideoId = (url) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
-export default function Chat() {
+export default function Chat({ isVisible }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [conversations, setConversations] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
@@ -90,6 +90,14 @@ export default function Chat() {
     }
   }, [conversations, searchHistory, selectedIndex, isInitialized]);
 
+  useEffect(() => {
+    if (!isVisible && isSearching) {
+      // If the chat is not visible but a search is in progress,
+      // you might want to show a notification or update the UI somehow
+      console.log('Search in progress while Chat is not visible');
+    }
+  }, [isVisible, isSearching]);
+
   const scrollToLatestConversation = () => {
     if (latestConversationRef.current) {
       latestConversationRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -130,7 +138,9 @@ export default function Chat() {
       setShowInitialQuestions(false);
       setSearchQuery("");
       
-      setTimeout(scrollToLatestConversation, 100);
+      if (isVisible) {
+        setTimeout(scrollToLatestConversation, 100);
+      }
     } catch (error) {
       console.error("Error fetching response:", error);
     } finally {
@@ -336,7 +346,7 @@ export default function Chat() {
             <div className="p-4 bg-gray-100">
               <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
                 <div className="flex mr-2">
-                  <Button
+<Button
                     type="button"
                     variant="outline"
                     size="icon"
@@ -347,7 +357,8 @@ export default function Chat() {
                   </Button>
                   <div className="relative">
                     <Button
-                      type="button" variant="outline"
+                      type="button"
+                      variant="outline"
                       size="icon"
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
