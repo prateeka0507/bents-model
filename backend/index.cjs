@@ -67,21 +67,31 @@ app.get("/", (req, res) => {
 });
 
 // Route to handle contact form submission
-app.post('/contact', async (req, res) => {
+app.post('/contact', validateContact, async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { name, email, subject, message } = req.body;
+
   try {
     console.log('Received contact form submission:', { name, email, subject, message });
 
-    const { rows } = await pool.query(
-      'INSERT INTO contacts (name, email, subject, message) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, email, subject, message]
-    );
+    const query = `
+      INSERT INTO contacts (name, email, subject, message)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `;
 
+    const values = [name, email, subject, message];
+    const { rows } = await pool.query(query, values);
     console.log('Contact saved successfully:', rows[0]);
-    res.json({ message: 'Message received successfully!', data: rows[0] });
+    res.status(201).json({ message: 'Message received successfully!', data: rows[0] });
   } catch (err) {
     console.error('Error saving contact data:', err);
-    res.status(500).json({ message: 'An error occurred while processing your request.', error: err.message });
+    res.status(500).json({ message: 'An error occurred while processing your request.' });
   }
 });
 
