@@ -208,7 +208,7 @@ export default function Chat({ isVisible }) {
   };
 
   const renderDropdownMenu = () => (
-    <div className="absolute bottom-full left-0 mb-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+    <div className="absolute bottom-full left-0 mb-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
       <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
         {[
           { value: "bents", label: "All" },
@@ -237,7 +237,7 @@ export default function Chat({ isVisible }) {
   const renderSearchBar = () => (
     <form onSubmit={handleSearch} className="w-full max-w-2xl mx-auto">
       <div className="relative flex items-center">
-        <div className="absolute left-2 flex">
+        <div className="absolute left-2 flex z-10">
           <Button
             type="button"
             variant="outline"
@@ -265,11 +265,11 @@ export default function Chat({ isVisible }) {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Ask anything..."
-          className="w-full p-6 pl-28 pr-14 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+          className="w-full p-4 pl-24 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
         />
         <button
           type="submit"
-          className="absolute right-2 text-gray-400"
+          className="absolute right-2 text-gray-400 z-10"
           disabled={isSearching || isLoading || !searchQuery.trim()}
         >
           {isSearching || isLoading ? (
@@ -284,12 +284,12 @@ export default function Chat({ isVisible }) {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      <div className="flex-grow overflow-y-auto pt-16"> {/* Added pt-16 to prevent overlap with header */}
+      <div className="flex-grow overflow-y-auto pt-16 pb-20"> {/* Added pb-20 for bottom padding */}
         {conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-4">
+          <div className="flex flex-col items-center justify-center min-h-full p-4">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
-            <div ref={searchBarRef} className="w-full max-w-2xl mb-8">
+            <div className="w-full max-w-2xl mb-8">
               {renderSearchBar()}
             </div>
 
@@ -314,7 +314,7 @@ export default function Chat({ isVisible }) {
           </div>
         ) : (
           <div className="flex flex-col h-full">
-            <div className="flex-grow overflow-y-auto p-4">
+            <div className="flex-grow overflow-y-auto p-4 pb-20"> {/* Added pb-20 for bottom padding */}
               {conversations.map((conv, index) => (
                 <div 
                   key={index} 
@@ -351,13 +351,13 @@ export default function Chat({ isVisible }) {
                 </div>
               ))}
             </div>
-
-          <div ref={searchBarRef} className={`p-4 bg-gray-100 ${isSearchBarFixed ? 'fixed top-16 left-0 right-0 z-10' : ''}`}>
-              {renderSearchBar()}
-            </div>
-            {isSearchBarFixed && <div className="h-20"></div>} {/* Spacer to prevent content jump when search bar becomes fixed */}
           </div>
         )}
+      </div>
+      
+     {/* Fixed search bar at the bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        {renderSearchBar()}
       </div>
     </div>
   );
