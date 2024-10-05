@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { ArrowRight, PlusCircle, HelpCircle, ChevronRight } from 'lucide-react';
+import { ArrowRight, PlusCircle, Search, Send, HelpCircle, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import YouTube from 'react-youtube';
 import { Button } from "@/components/ui/button";
@@ -30,11 +30,25 @@ export default function Chat({ isVisible }) {
   const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSearchBarFixed, setIsSearchBarFixed] = useState(false);
   const latestConversationRef = useRef(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const searchBarRef = useRef(null);
 
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (searchBarRef.current) {
+        const searchBarPosition = searchBarRef.current.getBoundingClientRect().top;
+        setIsSearchBarFixed(searchBarPosition <= 0);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -270,9 +284,9 @@ export default function Chat({ isVisible }) {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      <div className="flex-grow overflow-y-auto p-4">
+      <div className="flex-grow overflow-y-auto pt-16 pb-20"> {/* Added pb-20 for bottom padding */}
         {conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-full">
+          <div className="flex flex-col items-center justify-center min-h-full p-4">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
             <div className="w-full max-w-2xl mb-8">
@@ -300,7 +314,7 @@ export default function Chat({ isVisible }) {
           </div>
         ) : (
           <div className="flex flex-col h-full">
-            <div className="flex-grow overflow-y-auto">
+            <div className="flex-grow overflow-y-auto p-4 pb-20"> {/* Added pb-20 for bottom padding */}
               {conversations.map((conv, index) => (
                 <div 
                   key={index} 
@@ -341,12 +355,10 @@ export default function Chat({ isVisible }) {
         )}
       </div>
       
-      {/* Conditional rendering of the bottom search bar */}
-      {conversations.length > 0 && (
-        <div className="bg-white border-t border-gray-200 p-4">
-          {renderSearchBar()}
-        </div>
-      )}
+     {/* Fixed search bar at the bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+        {renderSearchBar()}
+      </div>
     </div>
   );
 }
