@@ -41,12 +41,17 @@ export default function Chat({ isVisible }) {
     const isNewPageLoad = !sessionStorage.getItem('isPageLoaded');
     
     if (isNewPageLoad) {
-      // This is a new page load (refresh), clear local storage
-      localStorage.removeItem('chatData');
+      // This is a new page load (refresh), clear session storage and reset state
+      sessionStorage.clear();
       sessionStorage.setItem('isPageLoaded', 'true');
+      setConversations([]);
+      setSearchHistory([]);
+      setSelectedIndex("bents");
+      setShowInitialQuestions(true);
+      setIsInitialized(true);
     } else {
-      // This is navigation between pages, try to load data from local storage
-      const storedData = localStorage.getItem('chatData');
+      // This is navigation between pages, try to load data from session storage
+      const storedData = sessionStorage.getItem('chatData');
       if (storedData) {
         const parsedData = JSON.parse(storedData);
         setConversations(parsedData.conversations || []);
@@ -54,35 +59,21 @@ export default function Chat({ isVisible }) {
         setSelectedIndex(parsedData.selectedIndex || "bents");
         setShowInitialQuestions(parsedData.conversations.length === 0);
         setIsInitialized(true);
-        return; // Exit early as we've loaded the data
+      } else {
+        // If no stored data, set initial state
+        setConversations([]);
+        setSearchHistory([]);
+        setSelectedIndex("bents");
+        setShowInitialQuestions(true);
+        setIsInitialized(true);
       }
     }
-
-    // If no stored data or it's a refresh, fetch from the server
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get(`https://bents-model-backend.vercel.app/api/user/${userId}`);
-        const userData = response.data;
-        if (userData) {
-          setConversations(userData.conversations || []);
-          setSearchHistory(userData.searchHistory || []);
-          setSelectedIndex(userData.selectedIndex || "bents");
-          setShowInitialQuestions(userData.conversations.length === 0);
-        }
-        setIsInitialized(true);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setIsInitialized(true);
-      }
-    };
-
-    fetchUserData();
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
-    // Save data to local storage whenever it changes
+    // Save data to session storage whenever it changes
     if (isInitialized) {
-      localStorage.setItem('chatData', JSON.stringify({
+      sessionStorage.setItem('chatData', JSON.stringify({
         conversations,
         searchHistory,
         selectedIndex
@@ -346,7 +337,7 @@ export default function Chat({ isVisible }) {
             <div className="p-4 bg-gray-100">
               <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
                 <div className="flex mr-2">
-<Button
+                  <Button
                     type="button"
                     variant="outline"
                     size="icon"
@@ -356,7 +347,7 @@ export default function Chat({ isVisible }) {
                     <PlusCircle className="h-4 w-4" />
                   </Button>
                   <div className="relative">
-                    <Button
+<Button
                       type="button"
                       variant="outline"
                       size="icon"
