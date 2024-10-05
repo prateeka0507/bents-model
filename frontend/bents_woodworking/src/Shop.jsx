@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { Button } from './components/ui/button.jsx'
 import { Card, CardContent, CardFooter } from './components/ui/card.jsx'
-import { Input } from './components/ui/input.jsx'
 import { Loader2, ExternalLink, Search } from 'lucide-react'
 
 function ProductCard({ product }) {
@@ -89,12 +88,12 @@ export default function Shop() {
           Recommended Products
         </h1>
         <div className="relative max-w-md mx-auto">
-          <Input
+          <input
             type="text"
             placeholder="Search products..."
             value={searchTerm}
             onChange={handleSearch}
-            className="pl-10 pr-4 py-2 w-full"
+            className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
         </div>
