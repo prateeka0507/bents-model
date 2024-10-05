@@ -37,41 +37,52 @@ export default function Chat({ isVisible }) {
   const userId = "user123"; // This should be dynamically set based on your authentication system
 
   useEffect(() => {
-    // Check if this is a new page load or a refresh
-    const isNewPageLoad = !sessionStorage.getItem('isPageLoaded');
+    const handleBeforeUnload = () => {
+      sessionStorage.removeItem('chatData');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Check if this is a new page load
+    const storedData = sessionStorage.getItem('chatData');
     
-    if (isNewPageLoad) {
-      // This is a new page load (refresh), clear session storage and reset state
-      sessionStorage.clear();
-      sessionStorage.setItem('isPageLoaded', 'true');
-      setConversations([]);
-      setSearchHistory([]);
-      setSelectedIndex("bents");
-      setShowInitialQuestions(true);
+    if (storedData) {
+      // This is navigation between pages, load data from sessionStorage
+      const parsedData = JSON.parse(storedData);
+      setConversations(parsedData.conversations || []);
+      setSearchHistory(parsedData.searchHistory || []);
+      setSelectedIndex(parsedData.selectedIndex || "bents");
+      setShowInitialQuestions(parsedData.conversations.length === 0);
       setIsInitialized(true);
     } else {
-      // This is navigation between pages, try to load data from session storage
-      const storedData = sessionStorage.getItem('chatData');
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        setConversations(parsedData.conversations || []);
-        setSearchHistory(parsedData.searchHistory || []);
-        setSelectedIndex(parsedData.selectedIndex || "bents");
-        setShowInitialQuestions(parsedData.conversations.length === 0);
-        setIsInitialized(true);
-      } else {
-        // If no stored data, set initial state
-        setConversations([]);
-        setSearchHistory([]);
-        setSelectedIndex("bents");
-        setShowInitialQuestions(true);
-        setIsInitialized(true);
-      }
+      // This is a new page load or refresh, fetch from the server
+      const fetchUserData = async () => {
+        try {
+          const response = await axios.get(`https://bents-model-backend.vercel.app/api/user/${userId}`);
+          const userData = response.data;
+          if (userData) {
+            setConversations(userData.conversations || []);
+            setSearchHistory(userData.searchHistory || []);
+            setSelectedIndex(userData.selectedIndex || "bents");
+            setShowInitialQuestions(userData.conversations.length === 0);
+          }
+          setIsInitialized(true);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setIsInitialized(true);
+        }
+      };
+
+      fetchUserData();
     }
-  }, []);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [userId]);
 
   useEffect(() => {
-    // Save data to session storage whenever it changes
+    // Save data to sessionStorage whenever it changes
     if (isInitialized) {
       sessionStorage.setItem('chatData', JSON.stringify({
         conversations,
@@ -83,8 +94,6 @@ export default function Chat({ isVisible }) {
 
   useEffect(() => {
     if (!isVisible && isSearching) {
-      // If the chat is not visible but a search is in progress,
-      // you might want to show a notification or update the UI somehow
       console.log('Search in progress while Chat is not visible');
     }
   }, [isVisible, isSearching]);
@@ -168,21 +177,17 @@ export default function Chat({ isVisible }) {
   };
 
   const formatResponse = (text, videoLinks) => {
-    // Replace timestamps with hyperlinks
     let formattedText = text.replace(/\[video(\d+)\]/g, (match, p1) => {
       const link = videoLinks[`[video${p1}]`];
       return link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Video</a>` : match;
     });
     
-    // Format numbered bold text, including colon on the same line, and move content to next line
     formattedText = formattedText.replace(/(\d+)\.\s*\*\*(.*?)\*\*(:?)\s*([-\s]*)(.+)/g, (match, number, title, colon, dash, content) => {
       return `<div class="font-bold mt-2 mb-1">${number}. ${title}${colon}</div><div class="ml-4">${dash}${content}</div>`;
     });
     
-    // Remove ****timestamp**** before the time stamp video link
     formattedText = formattedText.replace(/\*\*\*\*timestamp\*\*\*\*\s*(\[video\d+\])/g, '$1');
     
-    // Make headings and sub-headings bold if they start with **
     formattedText = formattedText.replace(/^(\#{1,6})\s*\*\*(.*?)\*\*/gm, '$1 <strong>$2</strong>');
     
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
@@ -217,13 +222,11 @@ export default function Chat({ isVisible }) {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* Main content */}
       <div className="flex-grow overflow-y-auto">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-4">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
-            {/* Initial Search bar */}
             <form onSubmit={handleSearch} className="w-full max-w-2xl mb-8">
               <div className="relative flex items-center">
                 <div className="absolute left-2 flex">
@@ -270,7 +273,6 @@ export default function Chat({ isVisible }) {
               </div>
             </form>
 
-            {/* Initial questions */}
             {showInitialQuestions && (
               <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {initialQuestions.map((question, index) => (
@@ -292,7 +294,6 @@ export default function Chat({ isVisible }) {
           </div>
         ) : (
           <div className="flex flex-col h-full">
-            {/* Conversations */}
             <div className="flex-grow overflow-y-auto p-4">
               {conversations.map((conv, index) => (
                 <div 
@@ -302,7 +303,6 @@ export default function Chat({ isVisible }) {
                 >
                   <h2 className="font-bold mb-4">{conv.question}</h2>
                   
-                  {/* Related Products */}
                   <div className="mb-4">
                     <h3 className="font-semibold mb-2">Related Products</h3>
                     {conv.products && conv.products.length > 0 ? (
@@ -323,7 +323,6 @@ export default function Chat({ isVisible }) {
                     )}
                   </div>
 
-                  {/* Answer and Video */}
                   <div className="mb-4">
                     {renderVideo(conv.video, conv.videoLinks)}
                     {formatResponse(conv.text, conv.videoLinks)}
@@ -333,7 +332,6 @@ export default function Chat({ isVisible }) {
               ))}
             </div>
 
-            {/* Search Bar for non-empty conversations */}
             <div className="p-4 bg-gray-100">
               <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
                 <div className="flex mr-2">
@@ -347,14 +345,14 @@ export default function Chat({ isVisible }) {
                     <PlusCircle className="h-4 w-4" />
                   </Button>
                   <div className="relative">
-<Button
+                    <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
                     >
-                      <HelpCircle className="h-4 w-4" />
+                     <HelpCircle className="h-4 w-4" />
                     </Button>
                     {isDropdownOpen && renderDropdownMenu()}
                   </div>
@@ -388,3 +386,5 @@ export default function Chat({ isVisible }) {
     </div>
   );
 }
+
+export default Chat;
