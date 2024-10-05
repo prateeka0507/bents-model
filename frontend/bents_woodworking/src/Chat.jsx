@@ -30,25 +30,15 @@ export default function Chat({ isVisible }) {
   const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [isSearchBarFixed, setIsSearchBarFixed] = useState(false);
   const latestConversationRef = useRef(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const searchBarRef = useRef(null);
 
+  // New state to control which search bar to show
+  const [showCenterSearch, setShowCenterSearch] = useState(true);
+
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (searchBarRef.current) {
-        const searchBarPosition = searchBarRef.current.getBoundingClientRect().top;
-        setIsSearchBarFixed(searchBarPosition <= 0);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -67,6 +57,7 @@ export default function Chat({ isVisible }) {
       setSearchHistory(parsedData.searchHistory || []);
       setSelectedIndex(parsedData.selectedIndex || "bents");
       setShowInitialQuestions(parsedData.conversations.length === 0);
+      setShowCenterSearch(parsedData.conversations.length === 0);
       setIsInitialized(true);
     } else {
       // This is a new page load or refresh, fetch from the server
@@ -79,6 +70,7 @@ export default function Chat({ isVisible }) {
             setSearchHistory(userData.searchHistory || []);
             setSelectedIndex(userData.selectedIndex || "bents");
             setShowInitialQuestions(userData.conversations.length === 0);
+            setShowCenterSearch(userData.conversations.length === 0);
           }
           setIsInitialized(true);
         } catch (error) {
@@ -151,6 +143,7 @@ export default function Chat({ isVisible }) {
       setSearchHistory(prevHistory => [...prevHistory, query]);
       setShowInitialQuestions(false);
       setSearchQuery("");
+      setShowCenterSearch(false);  // Hide center search after first conversation
       
       if (isVisible) {
         setTimeout(scrollToLatestConversation, 100);
@@ -167,6 +160,7 @@ export default function Chat({ isVisible }) {
   const handleNewConversation = () => {
     setConversations([]);
     setShowInitialQuestions(true);
+    setShowCenterSearch(true);  // Show center search for new conversation
   };
 
   const renderVideo = (video, videoLinks) => {
@@ -284,14 +278,16 @@ export default function Chat({ isVisible }) {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      <div className="flex-grow overflow-y-auto pt-16 pb-20"> {/* Added pb-20 for bottom padding */}
+      <div className="flex-grow overflow-y-auto pt-16 pb-20">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-full p-4">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
-            <div className="w-full max-w-2xl mb-8">
-              {renderSearchBar()}
-            </div>
+            {showCenterSearch && (
+              <div className="w-full max-w-2xl mb-8">
+                {renderSearchBar()}
+              </div>
+            )}
 
             {showInitialQuestions && (
               <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -314,7 +310,7 @@ export default function Chat({ isVisible }) {
           </div>
         ) : (
           <div className="flex flex-col h-full">
-            <div className="flex-grow overflow-y-auto p-4 pb-20"> {/* Added pb-20 for bottom padding */}
+            <div className="flex-grow overflow-y-auto p-4 pb-20">
               {conversations.map((conv, index) => (
                 <div 
                   key={index} 
@@ -355,10 +351,12 @@ export default function Chat({ isVisible }) {
         )}
       </div>
       
-     {/* Fixed search bar at the bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-        {renderSearchBar()}
-      </div>
+  {/* Fixed search bar at the bottom */}
+      {!showCenterSearch && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          {renderSearchBar()}
+        </div>
+      )}
     </div>
   );
 }
