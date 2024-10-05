@@ -352,7 +352,7 @@ export default function Chat({ isVisible }) {
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
                     >
-                     <HelpCircle className="h-4 w-4" />
+<HelpCircle className="h-4 w-4" />
                     </Button>
                     {isDropdownOpen && renderDropdownMenu()}
                   </div>
@@ -387,4 +387,5 @@ export default function Chat({ isVisible }) {
   );
 }
 
-export default Chat;
+// Remove this line to fix the multiple default exports error
+// export default Chat;
