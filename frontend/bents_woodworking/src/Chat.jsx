@@ -30,11 +30,25 @@ export default function Chat({ isVisible }) {
   const [selectedIndex, setSelectedIndex] = useState("bents");
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSearchBarFixed, setIsSearchBarFixed] = useState(false);
   const latestConversationRef = useRef(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const searchBarRef = useRef(null);
 
   // Assume we have a userId for the current user
   const userId = "user123"; // This should be dynamically set based on your authentication system
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (searchBarRef.current) {
+        const searchBarPosition = searchBarRef.current.getBoundingClientRect().top;
+        setIsSearchBarFixed(searchBarPosition <= 0);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -220,58 +234,64 @@ export default function Chat({ isVisible }) {
     </div>
   );
 
+  const renderSearchBar = () => (
+    <form onSubmit={handleSearch} className="w-full max-w-2xl mx-auto">
+      <div className="relative flex items-center">
+        <div className="absolute left-2 flex">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="mr-2"
+            onClick={handleNewConversation}
+          >
+            <PlusCircle className="h-4 w-4" />
+          </Button>
+          <div className="relative">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+            {isDropdownOpen && renderDropdownMenu()}
+          </div>
+        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Ask anything..."
+          className="w-full p-6 pl-28 pr-14 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+        />
+        <button
+          type="submit"
+          className="absolute right-2 text-gray-400"
+          disabled={isSearching || isLoading || !searchQuery.trim()}
+        >
+          {isSearching || isLoading ? (
+            <span className="animate-spin">⌛</span>
+          ) : (
+            <ArrowRight size={24} />
+          )}
+        </button>
+      </div>
+    </form>
+  );
+
   return (
     <div className="flex flex-col h-screen bg-white">
-      <div className="flex-grow overflow-y-auto">
+      <div className="flex-grow overflow-y-auto pt-16"> {/* Added pt-16 to prevent overlap with header */}
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-4">
             <h2 className="text-3xl font-bold mb-8">A question creates knowledge</h2>
             
-            <form onSubmit={handleSearch} className="w-full max-w-2xl mb-8">
-              <div className="relative flex items-center">
-                <div className="absolute left-2 flex">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="mr-2"
-                    onClick={handleNewConversation}
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                  </Button>
-                  <div className="relative">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
-                    >
-                      <HelpCircle className="h-4 w-4" />
-                    </Button>
-                    {isDropdownOpen && renderDropdownMenu()}
-                  </div>
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ask anything..."
-                  className="w-full p-6 pl-28 pr-14 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-2 text-gray-400"
-                  disabled={isSearching || isLoading || !searchQuery.trim()}
-                >
-                  {isSearching || isLoading ? (
-                    <span className="animate-spin">⌛</span>
-                  ) : (
-                    <ArrowRight size={24} />
-                  )}
-                </button>
-              </div>
-            </form>
+            <div ref={searchBarRef} className="w-full max-w-2xl mb-8">
+              {renderSearchBar()}
+            </div>
 
             {showInitialQuestions && (
               <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -332,60 +352,13 @@ export default function Chat({ isVisible }) {
               ))}
             </div>
 
-            <div className="p-4 bg-gray-100">
-              <form onSubmit={handleSearch} className="flex items-center w-full max-w-2xl mx-auto">
-                <div className="flex mr-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="mr-2"
-                    onClick={handleNewConversation}
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                  </Button>
-                  <div className="relative">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className={selectedIndex !== "bents" ? "bg-blue-500 text-white" : ""}
-                    >
-<HelpCircle className="h-4 w-4" />
-                    </Button>
-                    {isDropdownOpen && renderDropdownMenu()}
-                  </div>
-                </div>
-                <div className="relative flex-grow">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Ask a question..."
-                    className="w-full p-2 pl-4 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 ml-2"
-                  disabled={isSearching || isLoading || !searchQuery.trim()}
-                >
-                  {isSearching || isLoading ? (
-                    <span className="animate-spin">⌛</span>
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
-              </form>
+          <div ref={searchBarRef} className={`p-4 bg-gray-100 ${isSearchBarFixed ? 'fixed top-16 left-0 right-0 z-10' : ''}`}>
+              {renderSearchBar()}
             </div>
+            {isSearchBarFixed && <div className="h-20"></div>} {/* Spacer to prevent content jump when search bar becomes fixed */}
           </div>
         )}
       </div>
     </div>
   );
 }
-
-// Remove this line to fix the multiple default exports error
-// export default Chat;
