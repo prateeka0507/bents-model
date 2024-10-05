@@ -218,21 +218,12 @@ def chat():
 
         logging.debug(f"Chat history received: {chat_history}")
 
-         
-        # Check if the index has changed
-        if 'last_index' not in session:
-            session['last_index'] = selected_index
-            session['chat_history'] = []
-        elif session['last_index'] != selected_index:
+          # Check if the index has changed
+        if 'last_index' not in session or session['last_index'] != selected_index:
             # If index has changed, clear the chat history
-            session['chat_history'] = []
+            chat_history = []
             session['last_index'] = selected_index
             logging.debug("Index changed, chat history cleared")
-        else:
-            # If index hasn't changed, use the stored chat history
-            chat_history = session.get('chat_history', [])
-
-        logging.debug(f"Using chat history: {chat_history}")
 
 
         # Initial input validation
@@ -369,9 +360,6 @@ def chat():
         logging.debug(f"Processed answer: {processed_answer}")
         
         related_products = []
-          # Update the chat history in the session
-        session['chat_history'] = chat_history + [user_query, initial_answer]
-
         
         # Check if the video title is in the list
         if video_title in video_title_list:
