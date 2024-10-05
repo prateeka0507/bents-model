@@ -341,10 +341,12 @@ export default function Chat({ isVisible }) {
         )}
       </div>
       
-      {/* Search bar at the bottom */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        {renderSearchBar()}
-      </div>
+      {/* Conditional rendering of the bottom search bar */}
+      {conversations.length > 0 && (
+        <div className="bg-white border-t border-gray-200 p-4">
+          {renderSearchBar()}
+        </div>
+      )}
     </div>
   );
 }
