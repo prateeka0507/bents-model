@@ -196,6 +196,38 @@ def upsert_transcript(transcript_text, metadata, index_name):
     
     transcript_vector_stores[index_name].add_documents(documents)
 
+        # List of video titles
+        video_title_list = [
+            "5 Modifications I Made In My Garage Shop - New Shop Part 5",
+            "2020 Shop Tour",
+            "American Green Lights",
+            "Assembly Table and Miter Saw Station",
+            "Complete Mr Cool Install",
+            "Every track saw owner could use this",
+            "How To Install Mr Cool DIY Series",
+            "I Built a Wall in my Garage",
+            "Moving A Woodworking Shop - New Shop Part 2",
+            "My shop is soundproof",
+            "People Told Me My Garage Door Would Explode",
+            "The biggest advancement in dust collection",
+            "Using SketchUp To Design Woodworking Shop - New Shop Part 1",
+            "8 Tools I Regret Not Buying Sooner",
+            "10 Tools Every Woodworker Should Own",
+            "10 woodworking tools I regret not buying sooner",
+            "10 Woodworking tools you will not regret",
+            "11 woodworking tools you need to own",
+            "12 Tools I will Never REGRET Buying",
+            "15 cabinet tools I do not regret",
+            "15 Woodworking Tools You Will not Regret",
+            "25 tools I regret not buying sooner",
+            "Every track saw owner could use this",
+            "FINALLY! The sprayer I have been waiting for",
+            "I would not buy these with your money",
+            "Stop wasting your money on the wrong ones",
+            "The 5 TSO tools you cannot live without",
+            "Track Saw Square Comparison TSO ProductsBench Dogs UKWoodpeckers ToolsInsta Rail Square"
+        ]
+
 @app.route('/')
 @app.route('/database')
 def serve_spa():
@@ -218,13 +250,20 @@ def chat():
 
         logging.debug(f"Chat history received: {chat_history}")
 
-          # Check if the index has changed
-        if 'last_index' not in session or session['last_index'] != selected_index:
+        # Check if the index has changed
+        if 'last_index' not in session:
+            session['last_index'] = selected_index
+            session['chat_history'] = []
+        elif session['last_index'] != selected_index:
             # If index has changed, clear the chat history
-            chat_history = []
+            session['chat_history'] = []
             session['last_index'] = selected_index
             logging.debug("Index changed, chat history cleared")
+        else:
+            # If index hasn't changed, use the stored chat history
+            chat_history = session.get('chat_history', [])
 
+        logging.debug(f"Using chat history: {chat_history}")
 
         # Initial input validation
         if not user_query or user_query in ['.', ',', '?', '!']:
@@ -271,7 +310,7 @@ def chat():
         
         if "INAPPROPRIATE" in relevance_response.upper():
             return jsonify({
-                'response': "I'm sorry, but this outside my context of answering. Is there something else I can help you with regarding woodworking, tools, or home improvement?",
+                'response': "I'm sorry, but this is outside my context of answering. Is there something else I can help you with regarding woodworking, tools, or home improvement?",
                 'related_products': [],
                 'url': None,
                 'context': [],
@@ -285,13 +324,13 @@ def chat():
                 'context': [],
                 'video_links': {}
             })
+
         # If we reach here, the query is relevant and not a greeting
         if selected_index == "all":
             # Use all indexes for the "All" option
             retrievers = [transcript_vector_stores[index].as_retriever(search_kwargs={"k": 1}) for index in TRANSCRIPT_INDEX_NAMES]
             retriever = MergerRetriever(retrievers=retrievers)
         else:
-
             retriever = transcript_vector_stores[selected_index].as_retriever(search_kwargs={"k": 3})
         
         prompt = ChatPromptTemplate.from_messages([
@@ -322,94 +361,32 @@ def chat():
 
         logging.debug(f"Extracted video title from chunk metadata: {video_title}")
 
-        # List of video titles
-        video_title_list = [
-            "5 Modifications I Made In My Garage Shop - New Shop Part 5",
-            "2020 Shop Tour",
-            "American Green Lights",
-            "Assembly Table and Miter Saw Station",
-            "Complete Mr Cool Install",
-            "Every track saw owner could use this",
-            "How To Install Mr Cool DIY Series",
-            "I Built a Wall in my Garage",
-            "Moving A Woodworking Shop - New Shop Part 2",
-            "My shop is soundproof",
-            "People Told Me My Garage Door Would Explode",
-            "The biggest advancement in dust collection",
-            "Using SketchUp To Design Woodworking Shop - New Shop Part 1",
-            "8 Tools I Regret Not Buying Sooner",
-            "10 Tools Every Woodworker Should Own",
-            "10 woodworking tools I regret not buying sooner",
-            "10 Woodworking tools you will not regret",
-            "11 woodworking tools you need to own",
-            "12 Tools I will Never REGRET Buying",
-            "15 cabinet tools I do not regret",
-            "15 Woodworking Tools You Will not Regret",
-            "25 tools I regret not buying sooner",
-            "Every track saw owner could use this",
-            "FINALLY! The sprayer I have been waiting for",
-            "I would not buy these with your money",
-            "Stop wasting your money on the wrong ones",
-            "The 5 TSO tools you cannot live without",
-            "Track Saw Square Comparison TSO ProductsBench Dogs UKWoodpeckers ToolsInsta Rail Square"
-        ]
-
         # Process the answer to replace timestamps and extract video links
         processed_answer, video_dict = process_answer(initial_answer, url)
         
         logging.debug(f"Processed answer: {processed_answer}")
         
-        related_products = []
-        
-        # Check if the video title is in the list
-        if video_title in video_title_list:
-            try:
-                product_index = pc.Index(PRODUCT_INDEX_NAME)
-                logging.debug(f"Querying product index: {PRODUCT_INDEX_NAME}")
-                
-                product_results = product_index.query(
-                    vector=embeddings.embed_query(video_title),
-                    top_k=15,
-                    include_metadata=True
-                )
-                logging.debug(f"Product search results: {product_results}")
-                
-                for match in product_results['matches']:
-                    try:
-                        product = {
-                            'id': match['id'],
-                            'title': match['metadata'].get('title', 'Untitled'),
-                            'tags': match['metadata'].get('tags', ''),
-                            'link': match['metadata'].get('link', ''),
-                            'score': match['score']
-                        }
-                        related_products.append(product)
-                        logging.debug(f"Retrieved product: {product}")
-                    except Exception as e:
-                        logging.error(f"Error processing product match: {str(e)}")
-                        logging.debug(f"Problematic match data: {match}")
-            except Exception as e:
-                logging.error(f"Error querying product index: {str(e)}")
-        else:
-            logging.info(f"Video title '{video_title}' not found in the list. No products retrieved.")
+        related_products = get_matched_products(video_title)
 
-        logging.debug(f"Final related products: {related_products}")
+        logging.debug(f"Retrieved matched products: {related_products}")
+
+        # Update the chat history in the session
+        session['chat_history'] = chat_history + [user_query, initial_answer]
 
         response_data = {
-    'response': processed_answer,
-    'initial_answer': initial_answer,
-    'related_products': related_products,
-    'url': url,
-    'context': context,
-    'video_links': video_dict,
-    'video_title': video_title
-}
+            'response': processed_answer,
+            'initial_answer': initial_answer,
+            'related_products': related_products,
+            'url': url,
+            'context': context,
+            'video_links': video_dict,
+            'video_title': video_title
+        }
 
         return jsonify(response_data)
     except Exception as e:
         logging.error(f"Error in chat route: {str(e)}", exc_info=True)
         return jsonify({'error': 'An error occurred processing your request'}), 500
-
     
     
 @app.route('/upload_document', methods=['POST'])
