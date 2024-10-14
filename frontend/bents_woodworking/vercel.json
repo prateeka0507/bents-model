@@ -12,5 +12,10 @@
       "src": "/shop",
       "dest": "/"
     }
-  ]
+  ],
+  "functions": {
+    "api/test.js": {
+      "maxDuration": 90
+    }
+  }
 }
