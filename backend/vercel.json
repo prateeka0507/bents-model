@@ -11,10 +11,5 @@
       "src": "/(.*)",
       "dest": "index.cjs"
     }
-  ],
-  "functions": {
-    "api/test.js": {
-      "maxDuration": 90
-    }
-  }
+  ]
 }
