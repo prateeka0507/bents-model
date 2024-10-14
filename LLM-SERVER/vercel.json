@@ -5,5 +5,10 @@
     ],
     "routes": [
       { "src": "/(.*)", "dest": "app.py" }
-    ]
+    ],
+    "functions": {
+    "api/test.js": {
+      "maxDuration": 90
+    }
   }
+}
